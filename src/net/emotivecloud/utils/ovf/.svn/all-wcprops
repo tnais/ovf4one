@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svnroot/emotivecloud/!svn/ver/4750/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf
+END
+TCloudParser.java
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svnroot/emotivecloud/!svn/ver/4391/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/TCloudParser.java
+END
+OVFException.java
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svnroot/emotivecloud/!svn/ver/4353/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFException.java
+END
+OVFNetwork.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svnroot/emotivecloud/!svn/ver/4750/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFNetwork.java
+END
+TCloudException.java
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svnroot/emotivecloud/!svn/ver/4391/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/TCloudException.java
+END
+OVFDisk.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svnroot/emotivecloud/!svn/ver/4750/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFDisk.java
+END
+OVFWrapperFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svnroot/emotivecloud/!svn/ver/4750/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFWrapperFactory.java
+END
+OVFAux.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svnroot/emotivecloud/!svn/ver/4565/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFAux.java
+END
+OVFWrapper.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svnroot/emotivecloud/!svn/ver/4565/Scheduler/OVFWrapper/src/main/java/net/emotivecloud/utils/ovf/OVFWrapper.java
+END
