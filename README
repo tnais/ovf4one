@@ -1,5 +1,10 @@
-== OVF4ONE
-
-=== OVF format FOR OpenNEbula
+  OOOO   VV    VV FFFFFFFF    44     OOOO   N  	NN EEEEEEEE
+ OO  OO  VV	   VV FFFFFFFF	 444    OO  OO 	NN 	NN EEEEEEEE
+OOO  OOO  VV  VV  FF	  	4 44   OOO  OOO	NNN	NN EE
+OOO  OOO  VV  VV  FFFFF	   4  44   OOO  OOO	NNNNNN EEEEE
+OOO  OOO  VV  VV  FF   	   4444444 OOO  OOO	NN NNN EE
+ OO  OO	   VVVV	  FF	  	  44    OO  OO 	NN	NN EEEEEEEE
+  OOOO		VV 	  FF	  	  44     OOOO  	NN	 N EEEEEEEE
 
 A proxy that translates OCCI requests using OVF into OCA OpenNebula calls.
+
