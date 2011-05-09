@@ -249,20 +249,38 @@ public class DRP4OVF{
 	}
 
 	// Generates a description starting from an ovf wrapper.
+    // TODO: Choose default values
+    // TODO: Error Handling.
     private String ovf2OneDescription(OVFWrapper ovf) {
 		StringBuilder buf = new StringBuilder(1024);
 
 		// Name, CPUs and Memory
 
-		buf.append("NAME = \""); buf.append(ovf.getId()); buf.append("\"\n");
-		buf.append("MEMORY = "); buf.append(ovf.getMemoryMB()); buf.append("\n");
-		buf.append("CPU = "); buf.append(ovf.getCPUsNumber()); buf.append("\n");
-		buf.append("VCPU = "); buf.append(ovf.getCPUsNumber()); buf.append("\n");
+		/*
+		 * Unless defaults are defined, we add just the values we find in the OVF
+		 */
+		
+		Object tmp = ovf.getId();
+		if(tmp != null)
+			buf.append("NAME = \""); buf.append(tmp); buf.append("\"\n");
 
+		tmp = ovf.getMemoryMB();
+		if(tmp != null)
+			buf.append("MEMORY = "); buf.append(tmp); buf.append("\n");
+	
+		tmp = ovf.getCPUsNumber();
+		if(tmp != null) {
+			// It seems that in our OVF VCPUs and CPUs are the same thing.
+			buf.append("CPU = "); buf.append(tmp); buf.append("\n");
+			buf.append("VCPU = "); buf.append(tmp); buf.append("\n");
+		}
+		
 		// OS attribute 
 
 		buf.append("OS = [\n");
-		buf.append("ARCH = \""); buf.append(ovf.getArchitecture().toString()); buf.append("\n");
+		tmp = ovf.getArchitecture();
+		if(tmp != null)
+			buf.append("ARCH = \""); buf.append(tmp.toString()); buf.append("\n");
 
 		for( String productProperty: productPropertiesList) {
 			String value = ovf.getProductProperty(productProperty);
@@ -325,7 +343,7 @@ public class DRP4OVF{
 		// We list devices in order eth0, eth1, eth2... The context script will get
 		// them out and prepare the network configuration files.
 		//
-		// TODO: completare
+		// TODO: finish
 
 		buf.append("CONTEXT = [\n");
 		int ethNumber = 0;
