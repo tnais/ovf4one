@@ -123,7 +123,13 @@ public class DRP4OVF{
 	}
 
     
-    
+	@GET @Produces("text/plain")
+    public String getGreeting() {
+
+        return "It seems that the GET works";
+
+    }
+	
     /***************************************************************************
      *         Methods with a correspondence in the OCCI interface.            *
      **************************************************************************/
