@@ -2,46 +2,31 @@ package net.emotivecloud.scheduler.onedrp;
 
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
-
-import net.emotivecloud.commons.Compute;
-
-import com.sun.jersey.spi.resource.Singleton;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.UriBuilder;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.MarshalException;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.ValidationException;
 
-import net.emotivecloud.commons.ListStrings;
 import net.emotivecloud.utils.ovf.OVFDisk;
 import net.emotivecloud.utils.ovf.OVFException;
 import net.emotivecloud.utils.ovf.OVFNetwork;
 import net.emotivecloud.utils.ovf.OVFWrapper;
-import net.emotivecloud.utils.ovf.OVFWrapper.CPUArch;
 import net.emotivecloud.utils.ovf.OVFWrapperFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dmtf.schemas.ovf.envelope._1.EnvelopeType;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
+
+import com.sun.jersey.spi.resource.Singleton;
 
 
     /***************************************************************************
@@ -98,6 +83,7 @@ public class DRP4OVF{
 	private final static String productPropertiesList[] = 
 		new String[] { KERNEL, INITRD, ROOT, KERNEL_CMD, BOOTLOADER, BOOT };
 
+
 	public enum BootType {
 		hd("hd"),
 		fd("fd"),
@@ -129,7 +115,7 @@ public class DRP4OVF{
         return "It seems that the GET works";
 
     }
-	
+
     /***************************************************************************
      *         Methods with a correspondence in the OCCI interface.            *
      **************************************************************************/
@@ -159,7 +145,7 @@ public class DRP4OVF{
         
         if(rc.isError()) {
         	log.error("Failed to create VM " + ovf.getId() +": " + rc.getErrorMessage());
-        	throw new DRPOneException(rc.getErrorMessage());
+        	throw new DRPOneException(rc.getErrorMessage(),StatusCodes.ONE_FAILURE);
         }
         log.info("Environment "+id+" was created.");
 
@@ -234,9 +220,9 @@ public class DRP4OVF{
 			}
 			cause.append(e.getMessage());
 			log.error(cause.toString());
-			if(log.isTraceEnabled()) 
+			if(log.isTraceEnabled())
 				log.trace(cause, e);
-			throw new DRPOneException(cause.toString(),e);
+			throw new DRPOneException(cause.toString(),e,StatusCodes.XML_PROBLEM);
 		} catch (OVFException e) {
 			cause.append("Problems parsing OVF file: ");
 			cause.append(e.getMessage());
@@ -248,39 +234,62 @@ public class DRP4OVF{
 		return rv;
 	}
 
+
+	private boolean isKVMInUse(OVFWrapper ovf) {
+		// TODO: just a stub to get the code compile and run... with KVM.
+		return true;
+	}
+
 	// Generates a description starting from an ovf wrapper.
-    // TODO: Choose default values
-    // TODO: Error Handling.
     private String ovf2OneDescription(OVFWrapper ovf) {
 		StringBuilder buf = new StringBuilder(1024);
 
 		// Name, CPUs and Memory
 
-		/*
-		 * Unless defaults are defined, we add just the values we find in the OVF
-		 */
-		
+		boolean weUseKVM =  isKVMInUse(ovf);
+
+		// These are flags to check if a certain value is
+		// supplied. These are all values that are mandatory or not
+		// depending on the hypervisor in use...
+		boolean weGotArch = false;
+		boolean weGotKernel = false;
+		boolean weGotBootloader = false;
+		boolean weGotBoot = false;
+		boolean weGotDisk = false;
+
+
 		Object tmp = ovf.getId();
-		if(tmp != null)
+		if(tmp != null) {
 			buf.append("NAME = \""); buf.append(tmp); buf.append("\"\n");
+		}
 
 		tmp = ovf.getMemoryMB();
-		if(tmp != null)
+		if(tmp != null) {
 			buf.append("MEMORY = "); buf.append(tmp); buf.append("\n");
-	
+		}
+		else
+			throw new DRPOneException("OVF file is missing mandatory memory specification",StatusCodes.BAD_OVF);
+
 		tmp = ovf.getCPUsNumber();
 		if(tmp != null) {
 			// It seems that in our OVF VCPUs and CPUs are the same thing.
 			buf.append("CPU = "); buf.append(tmp); buf.append("\n");
 			buf.append("VCPU = "); buf.append(tmp); buf.append("\n");
 		}
-		
+		else
+			throw new DRPOneException("OVF file is missing mandatory CPU number specification",StatusCodes.BAD_OVF);
 		// OS attribute 
 
 		buf.append("OS = [\n");
 		tmp = ovf.getArchitecture();
-		if(tmp != null)
-			buf.append("ARCH = \""); buf.append(tmp.toString()); buf.append("\n");
+		if(tmp != null) {
+			buf.append("ARCH = \""); buf.append(tmp.toString()); buf.append("\"\n");
+		}
+		else {
+			// TODO: wait for group choiche then (maybe) change
+			// System.getProperty("os.arch") with "i686"
+			buf.append("ARCH = \""); buf.append(System.getProperty("os.arch"));  buf.append("\"\n");
+		}
 
 		for( String productProperty: productPropertiesList) {
 			String value = ovf.getProductProperty(productProperty);
@@ -290,9 +299,24 @@ public class DRP4OVF{
 				// an array of constant references
 				if(productProperty == BOOT) {
 					if(BootType.isValid(value)) {
-						buf.append(BOOT + " = \""); buf.append(value); buf.append("\"\n");
+						buf.append(BOOT);
+						buf.append(" = \""); buf.append(value); buf.append("\"\n");
+						weGotBoot = true;
+
 					}
 				}
+				else if(productProperty == BOOTLOADER) {
+					buf.append(BOOTLOADER);
+					buf.append(" = \""); buf.append(value); buf.append("\"\n");
+					weGotBootloader = true;
+
+				}
+				else if(productProperty == KERNEL) {
+					buf.append(KERNEL);
+					buf.append(" = \""); buf.append(value); buf.append("\"\n");
+					weGotKernel = true;
+				}
+
 				else {
 					buf.append(productProperty);
 					buf.append(" = \""); buf.append(value); buf.append("\"\n");
@@ -308,12 +332,20 @@ public class DRP4OVF{
 
 			if(dskName == null || "".equals(dskName)) {
 				// We are using a physical disk image
-				buf.append("SOURCE = \""); buf.append(ovfDisk.getHref()); buf.append("\"\n");
-				buf.append("SIZE = "); buf.append(ovfDisk.getCapacityMB());
+				String path = ovfDisk.getHref();
+				Long size = ovfDisk.getCapacityMB();
+				// TODO: add FORMAT and TARGET as sonn as something as been defined.
+				if(path == null || size == null)
+					throw new DRPOneException("OVF file is missing mandatory URL and size specification for a disk",StatusCodes.BAD_OVF);
+
+				buf.append("SOURCE = \""); buf.append(path); buf.append("\"\n");
+				buf.append("SIZE = "); buf.append(size);
+				weGotDisk = true;
 			}
 			else {
 				// We are using a preregistered image.
 				buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"\n");
+				weGotDisk = true;
 			}
 			dskName = "";
 			buf.append("\n]\n");
@@ -326,8 +358,15 @@ public class DRP4OVF{
 
 			if(nicName == null || "".equals(nicName)) {
 				// We supply IP and MAC for this NIC
-				buf.append("IP = \""); buf.append(ovfNetwork.getIp()); buf.append("\"\n");
-				buf.append("MAC = \""); buf.append(ovfNetwork.getMac()); buf.append("\"\n");
+				tmp = ovfNetwork.getIp();
+				if( tmp != null) {
+					buf.append("IP = \""); buf.append(tmp); buf.append("\"\n");
+				}
+
+				tmp = ovfNetwork.getMac();
+				if( tmp != null ) {
+					buf.append("MAC = \""); buf.append(tmp); buf.append("\"\n");
+				}
 			}
 			else {
 				// We ask OpenNebula to assign us IP and MAC
@@ -351,8 +390,16 @@ public class DRP4OVF{
 			String nicName = ovfNetwork.getConnectionName();
 
 			if(nicName == null || "".equals(nicName)) {
-				buf.append("IP_"); buf.append(ethNumber); buf.append(" = \""); buf.append(ovfNetwork.getIp()); buf.append("\",\n");
-				buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \""); buf.append(ovfNetwork.getMac()); buf.append("\",\n");
+				tmp = ovfNetwork.getIp();
+				if( tmp != null) {
+					buf.append("IP_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+				}
+
+				tmp = ovfNetwork.getMac();
+				if( tmp != null ) {
+					buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+				}
+
 			}
 			else {
 				buf.append("IP_"); buf.append(ethNumber); buf.append(" = \"$NIC[IP, NETWORK=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
@@ -362,10 +409,27 @@ public class DRP4OVF{
 				buf.append("BROADCAST_"); buf.append(ethNumber); buf.append("=\"$NETWORK[BROADCAST, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 				buf.append("NETWORK_"); buf.append(ethNumber); buf.append("=\"$NETWORK[NETWORK, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 			}
-
+			ethNumber++;
 		}
 		buf.append("\n]\n");
 		log.trace(buf.toString());
+		System.out.println(buf.toString());
+
+		if(! ( (weGotArch || ! weUseKVM)        // this is mandatory for KVM only
+			   && (weGotKernel || weUseKVM)     // this is mandatory for XEN only
+			   && (weGotBootloader || weUseKVM) // this is mandatory for XEN only
+			   && (weGotBoot  || ! weUseKVM)    // this is mandatory for KVM only
+			   && weGotDisk) ) {
+			StringBuilder msg = new StringBuilder("These problem in the OVF file prevent correct execution of the command:");
+			msg.append( (weGotArch || ! weUseKVM)     ? "" : "\n- Missing ARCHitecture specification for use with KVM");
+			msg.append( (weGotKernel || weUseKVM)     ? "" : "\n- Missing KERNEL specification for use with XEN");
+			msg.append( (weGotBootloader || weUseKVM) ? "" : "\n- Missing BOOTLOADER specification for use with XEN");
+			msg.append( (weGotBoot  || ! weUseKVM)    ? "" : "\n- Missing BOOT device specification for use with KVM");
+			msg.append(          weGotDisk            ? "" : "\n- Missing any DISK image specification");
+
+			throw new DRPOneException(msg.toString(),StatusCodes.BAD_OVF);
+
+		}
 
 		return buf.toString();
 	}
@@ -1169,9 +1233,9 @@ REMOVE THIS COMMEND AND IMPLEMENT */
 		OneResponse rc = VirtualMachine.info(ocaClient, 0);
 
 		System.out.println(rc.getMessage());
-		
+
 		System.out.println(rc.getErrorMessage());
-		
+
 	}
 
 }
