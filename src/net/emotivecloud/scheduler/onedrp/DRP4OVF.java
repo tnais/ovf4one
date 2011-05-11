@@ -325,7 +325,15 @@ public class DRP4OVF{
 		}
 		buf.append("\n]\n");
 
-		// Disk attributes
+		/*
+		 *  Disk attributes
+		 */
+		
+		// Let's avoid some work to the VM :)
+		// 100 characters should avoid buffer resizing in most cases. 
+		// Don't worry, no buffer overflow ahead :)
+		StringBuilder propertyName = new StringBuilder(100);
+		
 		for(OVFDisk ovfDisk : ovf.getDisks().values()) {
 			buf.append("DISK = [\n");
 			String dskName = ovfDisk.getId();
@@ -338,15 +346,36 @@ public class DRP4OVF{
 				// We are using a physical disk image
 				
 				Long size = ovfDisk.getCapacityMB();
-				// TODO: get these from ProductProperties (mandatory)
-				//       coded as dskName".target" and dksName".format" 
-				//		 (expressed in sh notation :) ).
-				//
+
 				if(size == null)
 					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
 
+				// TODO: Test this code
+				propertyName.delete(0, propertyName.length());
+				propertyName.append(dskName);
+				propertyName.append(".target");
+				
+				String target = ovf.getProductProperty(propertyName.toString());
+
+				if(target == null)
+					throw new DRPOneException("OVF file is missing mandatory target specification for a disk",StatusCodes.BAD_OVF);
+				
+				propertyName.delete(dskName.length(), propertyName.length());
+				propertyName.append(".format");
+				
+				String format = ovf.getProductProperty(propertyName.toString());
+
+				if(format == null)
+					throw new DRPOneException("OVF file is missing mandatory format specification for a disk",StatusCodes.BAD_OVF);
+
+				
 				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
 				buf.append("SIZE = "); buf.append(size);
+				// Open Nebula docomentation says both this values are mandatory.
+				// I have doubts for the latter...
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+				buf.append("FROMAT = \""); buf.append(format); buf.append("\"\n");
+				
 				weGotDisk = true;
 			}
 			else {
