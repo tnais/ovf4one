@@ -328,22 +328,30 @@ public class DRP4OVF{
 		// Disk attributes
 		for(OVFDisk ovfDisk : ovf.getDisks().values()) {
 			buf.append("DISK = [\n");
-			String dskName = ovf.getId();
-
-			if(dskName == null || "".equals(dskName)) {
+			String dskName = ovfDisk.getId();
+			String pathOrURL = ovfDisk.getHref();
+			
+			
+			// If we have a path or URL specified, we have a pysical
+			// disk. Else we have a pre-registered disk resource.
+			if(pathOrURL == null || "".equals(pathOrURL)) {
 				// We are using a physical disk image
-				String path = ovfDisk.getHref();
+				
 				Long size = ovfDisk.getCapacityMB();
-				// TODO: add FORMAT and TARGET as sonn as something as been defined.
-				if(path == null || size == null)
-					throw new DRPOneException("OVF file is missing mandatory URL and size specification for a disk",StatusCodes.BAD_OVF);
+				// TODO: get these from ProductProperties (mandatory)
+				//       coded as dskName".target" and dksName".format" 
+				//		 (expressed in sh notation :) ).
+				if(size == null)
+					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
 
-				buf.append("SOURCE = \""); buf.append(path); buf.append("\"\n");
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
 				buf.append("SIZE = "); buf.append(size);
 				weGotDisk = true;
 			}
 			else {
-				// We are using a preregistered image.
+				// No disk source, we have a pre-registered image.
+				if(dskName == null || "".equals(dskName))
+					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
 				buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"\n");
 				weGotDisk = true;
 			}

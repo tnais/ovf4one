@@ -13,6 +13,6 @@ public interface StatusCodes {
 	// Error status code 
 	static final int ONE_FAILURE = 510;
 	static final int XML_PROBLEM = 415;
-	static final int BAD_OVF = 400;
+	static final int BAD_OVF = 460;
 
 }
