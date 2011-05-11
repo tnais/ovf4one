@@ -341,6 +341,7 @@ public class DRP4OVF{
 				// TODO: get these from ProductProperties (mandatory)
 				//       coded as dskName".target" and dksName".format" 
 				//		 (expressed in sh notation :) ).
+				//
 				if(size == null)
 					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
 
