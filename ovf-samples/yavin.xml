@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns1:Envelope xmlns:ns2="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns1="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns4="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns3="http://schemas.dmtf.org/wbem/wscim/1/common">
+    <ns1:References>
+        <ns1:File ns1:href="file:///srv/cloud/one/one-images/quickposta-0.1.qemu" ns1:id="master"/>
+    </ns1:References>
+    <ns1:DiskSection>
+	  <!-- size of the physical disk -->
+        <ns1:Disk ns1:capacity="2048MB" ns1:diskId="master"/>
+    </ns1:DiskSection>
+    <ns1:NetworkSection/>
+    <ns1:ProductSection ns1:class="net.emotivecloud.utils.ovf.OVFWrapper">
+        <ns1:Info>Some configuration information for the VM (e.g. IP addresses)</ns1:Info>
+<!--        <ns1:Property ns1:value="126.2.2.1" ns1:type="string" ns1:key="network.ip.connection1"/>
+        <ns1:Property ns1:value="123.123.123.13" ns1:type="string" ns1:key="network.ip.netwithoutmac"/>
+        <ns1:Property ns1:value="some value" ns1:type="string" ns1:key="property2"/>
+        <ns1:Property ns1:value="some other value" ns1:type="string" ns1:key="property1"/> -->
+        <ns1:Property ns1:value="hda" ns1:type="string" ns1:key="master.target"/>
+        <ns1:Property ns1:value="ext3" ns1:type="string" ns1:key="master.format"/>
+    </ns1:ProductSection>
+    <ns1:VirtualSystem ns1:id="Yavin-prova">
+        <ns1:Info>VM description</ns1:Info>
+        <ns1:VirtualHardwareSection>
+            <ns1:Info>Virtual Hardware requirements</ns1:Info>
+            <ns1:Item>
+                <ns4:Description>Number of Virtual CPUs</ns4:Description>
+                <ns4:ElementName>1 virtual CPU</ns4:ElementName>
+                <ns4:InstanceID>0</ns4:InstanceID>
+                <ns4:ResourceType>3</ns4:ResourceType>
+                <ns4:VirtualQuantity>1</ns4:VirtualQuantity>
+            </ns1:Item>
+            <ns1:Item>
+                <ns4:AllocationUnits>MegaBytes</ns4:AllocationUnits>
+                <ns4:Description>Memory Size</ns4:Description>
+                <ns4:ElementName>256 MB of Memory</ns4:ElementName>
+                <ns4:InstanceID>1</ns4:InstanceID>
+                <ns4:ResourceType>4</ns4:ResourceType>
+                <ns4:VirtualQuantity>256</ns4:VirtualQuantity>
+            </ns1:Item>
+            <ns1:Item>
+                <ns4:AutomaticAllocation>true</ns4:AutomaticAllocation>
+                <ns4:Connection>VN334 network</ns4:Connection>
+                <ns4:ElementName>Registered </ns4:ElementName>
+                <ns4:InstanceID>3</ns4:InstanceID>
+                <ns4:ResourceType>10</ns4:ResourceType>
+            </ns1:Item>
+            <ns1:Item>
+                <ns4:AutomaticAllocation>true</ns4:AutomaticAllocation>
+                <ns4:ElementName>Hardisk 1</ns4:ElementName>
+                <ns4:HostResource>ovf://disk/master</ns4:HostResource>
+                <ns4:InstanceID>6</ns4:InstanceID>
+                <ns4:ResourceType>17</ns4:ResourceType>
+            </ns1:Item>
+        </ns1:VirtualHardwareSection>
+    </ns1:VirtualSystem>
+</ns1:Envelope> 
