@@ -12,6 +12,7 @@ package net.emotivecloud.scheduler.onedrp;
 public interface StatusCodes {
 	// Error status code 
 	static final int ONE_FAILURE = 510;
+	// TODO: revise these with Mario Macías
 	static final int XML_PROBLEM = 415;
 	static final int BAD_OVF = 460;
 
