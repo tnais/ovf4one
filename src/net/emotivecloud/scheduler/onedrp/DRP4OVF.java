@@ -22,6 +22,7 @@ import net.emotivecloud.utils.ovf.OVFWrapperFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.dmtf.schemas.ovf.envelope._1.VirtualSystemCollectionType;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
@@ -84,7 +85,7 @@ public class DRP4OVF{
 		new String[] { KERNEL, INITRD, ROOT, KERNEL_CMD, BOOTLOADER, BOOT };
 
 
-	public enum BootType {
+	private enum BootType {
 		hd("hd"),
 		fd("fd"),
 		cdrom("cdrom"),
@@ -108,6 +109,27 @@ public class DRP4OVF{
 
 	}
 
+	private enum DskType {
+		virtualDisk("disk"),
+		virtualSwap("swap"),
+		blockDevice("block"),
+		onTheFlyDisk("fs");
+		
+		private String asString;
+		
+		private DskType(String asString) {
+			this.asString = asString;
+		}
+		
+		public String toString() { return asString;	}
+		
+		public static DskType fromString(String startingString) {
+			return virtualDisk.asString.equals(startingString) ? virtualDisk
+					: virtualSwap.asString.equals(startingString) ? virtualSwap
+							: blockDevice.asString.equals(startingString) ? blockDevice
+									: onTheFlyDisk.asString.equals(startingString) ? onTheFlyDisk : null;
+		}
+	}
     
 	@GET @Produces("text/plain")
     public String getGreeting() {
@@ -337,54 +359,82 @@ public class DRP4OVF{
 		for(OVFDisk ovfDisk : ovf.getDisks().values()) {
 			buf.append("DISK = [\n");
 			String dskName = ovfDisk.getId();
+			int dskNameLen = dskName.length();
 			String pathOrURL = ovfDisk.getHref();
 			
+			propertyName.delete(0, propertyName.length());
+			propertyName.append(dskName);
+			String typeName = ovf.getProductProperty(propertyName.toString());
 			
-			// If we have a path or URL specified, we have a pysical
-			// disk. Else we have a pre-registered disk resource.
-			if(pathOrURL == null || "".equals(pathOrURL)) {
-				// We are using a physical disk image
-				
-				Long size = ovfDisk.getCapacityMB();
+			// Whe no disk type is specified, OpenNebula defaults to disk, and we do so.
+			DskType dskType = typeName == null ? DskType.virtualDisk : DskType.fromString(typeName);
 
-				if(size == null)
-					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
+			
+			Long size = ovfDisk.getCapacityMB();
 
-				// TODO: Test this code
-				propertyName.delete(0, propertyName.length());
-				propertyName.append(dskName);
-				propertyName.append(".target");
-				
-				String target = ovf.getProductProperty(propertyName.toString());
+			if(size == null && (dskType == DskType.virtualSwap || dskType == DskType.onTheFlyDisk))
+				throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
 
-				if(target == null)
-					throw new DRPOneException("OVF file is missing mandatory target specification for a disk",StatusCodes.BAD_OVF);
+
+			propertyName.delete(dskNameLen, propertyName.length());
+			propertyName.append(".target");
+			
+			String target = ovf.getProductProperty(propertyName.toString());
+
+			if(target == null && dskType != DskType.virtualSwap)
+				throw new DRPOneException("OVF file is missing mandatory target specification for a disk",StatusCodes.BAD_OVF);
+			
+			switch (dskType) {
+
+			case virtualDisk :
+				// If we have a path or URL specified, we have a pysical
+				// disk. Else we have a pre-registered disk resource.
+
+				if(pathOrURL != null && ! "".equals(pathOrURL)) {
+					// We are using a physical disk image
+					
+					buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
+					buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+					
+				}
+				else {
+					// No disk source, we have a pre-registered image.
+					if(dskName == null || "".equals(dskName))
+						throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
+					buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"\n");
+				}
+
+				// This COULD be a good system image...
+				weGotDisk = true;
+				break;
+			case virtualSwap:
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
+				buf.append("SIZE = "); buf.append(size);
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
 				
-				propertyName.delete(dskName.length(), propertyName.length());
+				break;
+				
+			case blockDevice:
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+				
+				break;
+				
+			case onTheFlyDisk:
+				propertyName.delete(dskNameLen, propertyName.length());
 				propertyName.append(".format");
 				
 				String format = ovf.getProductProperty(propertyName.toString());
 
 				if(format == null)
-					throw new DRPOneException("OVF file is missing mandatory format specification for a disk",StatusCodes.BAD_OVF);
-
-				
+					throw new DRPOneException("OVF file is missing mandatory format specification for an ont the fly disk image",StatusCodes.BAD_OVF);
 				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
 				buf.append("SIZE = "); buf.append(size);
-				// Open Nebula docomentation says both this values are mandatory.
-				// I have doubts for the latter...
+				buf.append("FORMAT = \""); buf.append(format); buf.append("\"\n");
 				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
-				buf.append("FROMAT = \""); buf.append(format); buf.append("\"\n");
-				
-				weGotDisk = true;
 			}
-			else {
-				// No disk source, we have a pre-registered image.
-				if(dskName == null || "".equals(dskName))
-					throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
-				buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"\n");
-				weGotDisk = true;
-			}
+			typeName = "";
+			pathOrURL= "";
 			dskName = "";
 			buf.append("\n]\n");
 		}
