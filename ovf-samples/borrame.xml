@@ -9,7 +9,7 @@
         <ns1:Disk ns1:capacity="1024MB" ns1:fileRef="cultura" ns1:diskId="cultura"/>
     </ns1:DiskSection>
     <ns1:NetworkSection/>
-    <ns1:ProductSection ns1:class="net.emotivecloud.utils.ovf.OVFWrapper">
+    <ns1:ProductSection ns1:class="net.emotivecloud.utils.ovf">
         <ns1:Info>Some configuration information for the VM (e.g. IP addresses)</ns1:Info>
         <ns1:Property ns1:value="126.2.2.1" ns1:type="string" ns1:key="network.ip.connection1"/>
         <ns1:Property ns1:value="123.123.123.13" ns1:type="string" ns1:key="network.ip.netwithoutmac"/>
@@ -17,8 +17,17 @@
         <ns1:Property ns1:value="some other value" ns1:type="string" ns1:key="property1"/>
     </ns1:ProductSection>
     <ns1:VirtualSystem ns1:id="cachoMaquinote">
-        <ns1:Info>VM description</ns1:Info>
-        <ns1:VirtualHardwareSection>
+	  <ns1:ProductSection ns1:class="net.emotivecloud.utils.ovf">
+		<ns1:Info>Some configuration information for the VM (e.g. IP addresses)</ns1:Info>
+		<ns1:Property ns1:value="126.2.2.1" ns1:type="string" ns1:key="network.ip.connection1"/>
+        <ns1:Property ns1:value="123.123.123.13" ns1:type="string" ns1:key="network.ip.netwithoutmac"/>
+        <ns1:Property ns1:value="some value" ns1:type="string" ns1:key="property2"/>
+        <ns1:Property ns1:value="some other value" ns1:type="string" ns1:key="property1"/>
+	  </ns1:ProductSection>
+	  <ns1:Papergoga />
+	  <ns1:Paperoga />
+	  <ns1:Info>VM description</ns1:Info>
+	  <ns1:VirtualHardwareSection>
             <ns1:Info>Virtual Hardware requirements</ns1:Info>
             <ns1:Item>
                 <ns4:Description>Number of Virtual CPUs</ns4:Description>

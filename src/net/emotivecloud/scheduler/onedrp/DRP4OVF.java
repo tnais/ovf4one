@@ -131,7 +131,8 @@ public class DRP4OVF{
 		}
 	}
     
-	@GET @Produces("text/plain")
+	@GET 
+	@Produces("text/plain")
     public String getGreeting() {
 
         return "It seems that the GET works";
@@ -224,6 +225,7 @@ public class DRP4OVF{
     private OVFWrapper parse(String ovfXml) throws DRPOneException {
     	OVFWrapper rv = null;
 		StringBuilder cause= new StringBuilder();
+		
 		try {
 			rv = OVFWrapperFactory.parse(ovfXml);
 		} catch (JAXBException e) {
@@ -273,7 +275,7 @@ public class DRP4OVF{
 		// These are flags to check if a certain value is
 		// supplied. These are all values that are mandatory or not
 		// depending on the hypervisor in use...
-		boolean weGotArch = false;
+//		boolean weGotArch = false;
 		boolean weGotKernel = false;
 		boolean weGotBootloader = false;
 		boolean weGotBoot = false;
@@ -300,56 +302,70 @@ public class DRP4OVF{
 		}
 		else
 			throw new DRPOneException("OVF file is missing mandatory CPU number specification",StatusCodes.BAD_OVF);
-		// OS attribute 
 
+		// OS attribute 
+		// we need a separator there, since there's a comma after the 
+		// first element in the array.
+		
 		buf.append("OS = [\n");
 		tmp = ovf.getArchitecture();
-		if(tmp != null) {
-			buf.append("ARCH = \""); buf.append(tmp.toString()); buf.append("\"\n");
-		}
-		else {
-			// TODO: wait for group choiche then (maybe) change
-			// System.getProperty("os.arch") with "i686"
-			buf.append("ARCH = \""); buf.append(System.getProperty("os.arch"));  buf.append("\"\n");
-		}
 
+		// ARCH is the firs element we place, no separator goes
+		// before, but if we put one in the file we need to change
+		// the separator
+		buf.append("ARCH = \"");
+		buf.append( (tmp != null) 
+					? tmp.toString()
+					: System.getProperty("os.arch") );
+		buf.append("\"");
+		// Here we can define the separator with the final value
+		// therefore we need not to update the variable...
+		String separator = ",\n";
+		
 		for( String productProperty: productPropertiesList) {
 			String value = ovf.getProductProperty(productProperty);
 
 			if(value != null && ! "".equals(value)) {
-				// This is a sensible test here! I am working on
-				// an array of constant references
+				// These are sensible test here! I am iterating on an
+				// array of constant references
 				if(productProperty == BOOT) {
 					if(BootType.isValid(value)) {
+						buf.append(separator);
 						buf.append(BOOT);
-						buf.append(" = \""); buf.append(value); buf.append("\"\n");
+						buf.append(" = \""); buf.append(value); buf.append("\"");
 						weGotBoot = true;
 
 					}
+					else
+						throw new DRPOneException("OVF file contains a bad value for BOOT",StatusCodes.BAD_OVF);
 				}
 				else if(productProperty == BOOTLOADER) {
+					buf.append(separator);
 					buf.append(BOOTLOADER);
-					buf.append(" = \""); buf.append(value); buf.append("\"\n");
+					buf.append(" = \""); buf.append(value); buf.append("\"");
 					weGotBootloader = true;
 
 				}
 				else if(productProperty == KERNEL) {
+					buf.append(separator);
 					buf.append(KERNEL);
-					buf.append(" = \""); buf.append(value); buf.append("\"\n");
+					buf.append(" = \""); buf.append(value); buf.append("\"");
 					weGotKernel = true;
 				}
 
 				else {
+					buf.append(separator);
 					buf.append(productProperty);
-					buf.append(" = \""); buf.append(value); buf.append("\"\n");
+					buf.append(" = \""); buf.append(value); buf.append("\"");
 				}
 			}
 		}
-		buf.append("\n]\n");
+		buf.append("]\n");
 
 		/*
 		 *  Disk attributes
 		 */
+		
 		
 		// Let's avoid some work to the VM :)
 		// 100 characters should avoid buffer resizing in most cases. 
@@ -358,6 +374,7 @@ public class DRP4OVF{
 		
 		for(OVFDisk ovfDisk : ovf.getDisks().values()) {
 			buf.append("DISK = [\n");
+
 			String dskName = ovfDisk.getId();
 			int dskNameLen = dskName.length();
 			String pathOrURL = ovfDisk.getHref();
@@ -392,31 +409,31 @@ public class DRP4OVF{
 
 				if(pathOrURL != null && ! "".equals(pathOrURL)) {
 					// We are using a physical disk image
-					
-					buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
-					buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+					buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
+					buf.append("TARGET = \""); buf.append(target); buf.append("\"");
 					
 				}
 				else {
 					// No disk source, we have a pre-registered image.
 					if(dskName == null || "".equals(dskName))
 						throw new DRPOneException("OVF file is missing mandatory size specification for a disk",StatusCodes.BAD_OVF);
-					buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"\n");
+					buf.append("IMAGE = \""); buf.append(dskName); buf.append("\"");
 				}
+				separator = ",\n";
 
 				// This COULD be a good system image...
 				weGotDisk = true;
 				break;
 			case virtualSwap:
-				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
-				buf.append("SIZE = "); buf.append(size);
-				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
+				buf.append("SIZE = "); buf.append(size); buf.append("\",\n");
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"");
 				
 				break;
 				
 			case blockDevice:
-				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
-				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"");
 				
 				break;
 				
@@ -428,15 +445,16 @@ public class DRP4OVF{
 
 				if(format == null)
 					throw new DRPOneException("OVF file is missing mandatory format specification for an ont the fly disk image",StatusCodes.BAD_OVF);
-				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\"\n");
-				buf.append("SIZE = "); buf.append(size);
-				buf.append("FORMAT = \""); buf.append(format); buf.append("\"\n");
-				buf.append("TARGET = \""); buf.append(target); buf.append("\"\n");
+
+				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
+				buf.append("SIZE = "); buf.append(size); buf.append("\",\n");
+				buf.append("FORMAT = \""); buf.append(format); buf.append("\",\n");
+				buf.append("TARGET = \""); buf.append(target); buf.append("\"");
 			}
 			typeName = "";
 			pathOrURL= "";
 			dskName = "";
-			buf.append("\n]\n");
+			buf.append("]\n");
 		}
 
 		// Network attributes
@@ -444,24 +462,29 @@ public class DRP4OVF{
 			buf.append("NIC = [\n");
 			String nicName = ovfNetwork.getConnectionName();
 
+			// I am working on a new array, so I need to reset the separator
+			separator = "";
+
 			if(nicName == null || "".equals(nicName)) {
 				// We supply IP and MAC for this NIC
 				tmp = ovfNetwork.getIp();
 				if( tmp != null) {
-					buf.append("IP = \""); buf.append(tmp); buf.append("\"\n");
+					buf.append("IP = \""); buf.append(tmp); buf.append("\"");
+					separator = ",\n";
 				}
 
 				tmp = ovfNetwork.getMac();
 				if( tmp != null ) {
-					buf.append("MAC = \""); buf.append(tmp); buf.append("\"\n");
+					buf.append(separator);
+					buf.append("MAC = \""); buf.append(tmp); buf.append("\"");
 				}
 			}
 			else {
 				// We ask OpenNebula to assign us IP and MAC
-				buf.append("NETWORK = \""); buf.append(nicName); buf.append("\"\n");
+				buf.append("NETWORK = \""); buf.append(nicName); buf.append("\"");
 			}
 			nicName = "";
-			buf.append("\n]\n");
+			buf.append("]\n");
 
 		}
 
@@ -473,6 +496,7 @@ public class DRP4OVF{
 		// TODO: finish
 
 		buf.append("CONTEXT = [\n");
+		separator = "";
 		int ethNumber = 0;
 		for(OVFNetwork ovfNetwork : ovf.getNetworks().values()) {
 			String nicName = ovfNetwork.getConnectionName();
@@ -480,36 +504,43 @@ public class DRP4OVF{
 			if(nicName == null || "".equals(nicName)) {
 				tmp = ovfNetwork.getIp();
 				if( tmp != null) {
+					buf.append(separator);
 					buf.append("IP_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+					separator = ",\n";
 				}
 
 				tmp = ovfNetwork.getMac();
 				if( tmp != null ) {
+					buf.append(separator);
 					buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+					separator = ",\n";
+
 				}
 
 			}
 			else {
+				buf.append(separator);
 				buf.append("IP_"); buf.append(ethNumber); buf.append(" = \"$NIC[IP, NETWORK=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 				buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \"$NIC[MAC, NETWORK=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 				buf.append("NETMASK_"); buf.append(ethNumber); buf.append("=\"$NETWORK[NETMASK, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 				buf.append("GATEWAY_"); buf.append(ethNumber); buf.append("=\"$NETWORK[GATEWAY, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
 				buf.append("BROADCAST_"); buf.append(ethNumber); buf.append("=\"$NETWORK[BROADCAST, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
-				buf.append("NETWORK_"); buf.append(ethNumber); buf.append("=\"$NETWORK[NETWORK, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\",\n");
+				buf.append("NETWORK_"); buf.append(ethNumber); buf.append("=\"$NETWORK[NETWORK, NAME=\\\""); buf.append(nicName); buf.append("\\\"]\"");
+				separator = ",\n";
 			}
 			ethNumber++;
 		}
-		buf.append("\n]\n");
+		buf.append("]\n");
 		log.trace(buf.toString());
 		System.out.println(buf.toString());
 
-		if(! ( (weGotArch || ! weUseKVM)        // this is mandatory for KVM only
-			   && (weGotKernel || weUseKVM)     // this is mandatory for XEN only
+		if(! ( /*(weGotArch || ! weUseKVM)        // this is mandatory for KVM only
+			   &&*/ (weGotKernel || weUseKVM)     // this is mandatory for XEN only
 			   && (weGotBootloader || weUseKVM) // this is mandatory for XEN only
 			   && (weGotBoot  || ! weUseKVM)    // this is mandatory for KVM only
 			   && weGotDisk) ) {
 			StringBuilder msg = new StringBuilder("These problem in the OVF file prevent correct execution of the command:");
-			msg.append( (weGotArch || ! weUseKVM)     ? "" : "\n- Missing ARCHitecture specification for use with KVM");
+//			msg.append( (weGotArch || ! weUseKVM)     ? "" : "\n- Missing ARCHitecture specification for use with KVM");
 			msg.append( (weGotKernel || weUseKVM)     ? "" : "\n- Missing KERNEL specification for use with XEN");
 			msg.append( (weGotBootloader || weUseKVM) ? "" : "\n- Missing BOOTLOADER specification for use with XEN");
 			msg.append( (weGotBoot  || ! weUseKVM)    ? "" : "\n- Missing BOOT device specification for use with KVM");
