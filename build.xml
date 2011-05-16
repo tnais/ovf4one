@@ -1,0 +1,44 @@
+<project name="warmonger" basedir="." default="cry havoc, and let slip the dogs of war!">
+  
+  <target name="clean" >
+	<delete dir="WebContent/WEB-INF/classes/" />
+	<delete file="ovf4one.war" />
+  </target>
+
+  <target name="init" >
+	<mkdir dir="WebContent/WEB-INF/classes/" />
+  </target>
+
+  <target name="compile" 
+		  depends="init">
+	<!-- includeantruntime is something they added
+	     with version 1.8, a suggestion I found said
+		 "set it to false and forget it ever existed" 
+
+	     It seems it works!-->
+	<javac srcdir="src" destdir="WebContent/WEB-INF/classes/"
+		   includeantruntime="false">
+	  <classpath>
+		<fileset dir="WebContent/WEB-INF/lib">
+		  <include name="*.jar" />
+		  <include name="*.zip" />
+		</fileset>
+		<fileset dir="WebContent/WEB-INF/classes/">
+		  <include name="**/*.class"/>
+		</fileset>
+	  </classpath>
+	</javac>
+  </target>
+
+  <target name="war!" depends="compile">
+	<war destfile="ovf4one.war" 
+		 webxml="WebContent/WEB-INF/web.xml"
+		 basedir="WebContent"
+		 manifest="WebContent/META-INF/MANIFEST.MF"/>
+		 
+  </target>
+
+  <target name="cry havoc, and let slip the dogs of war!" depends="war!">
+  </target>
+
+</project>
