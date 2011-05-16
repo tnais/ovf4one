@@ -313,6 +313,8 @@ public class DRP4OVF{
 		// ARCH is the firs element we place, no separator goes
 		// before, but if we put one in the file we need to change
 		// the separator
+		// TODO: wreaks havoc and destruction if this code runs on an
+		// AMD class CPU. FIX IT
 		buf.append("ARCH = \"");
 		buf.append( (tmp != null) 
 					? tmp.toString()
