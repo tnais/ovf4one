@@ -1,6 +1,11 @@
 package net.emotivecloud.scheduler.onedrp;
 
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -172,54 +177,21 @@ public class DRP4OVF{
         }
         log.info("Environment "+id+" was created.");
 
-//        } catch (Exception e) {
-//            System.out.println("ERROR.");
-//            e.printStackTrace();
-//            if (e.getMessage().contains("Name was already assigned in this VtM")) {
-//                throw new WebApplicationException(426); //Not Acceptable
-//            } else if (e.getMessage().contains("VirtMonitor")) {//REPAIR:VirtMonitor: getDomainId error.
-//                throw new WebApplicationException(420);
-//            } else if (e.getMessage().contains("Not enough resources")) {//REPAIR:INFO: Not enough resources: Memory
-//                throw new WebApplicationException(425);
-//            } else if (e.getMessage().contains("Creation failed")) {
-//                throw new WebApplicationException(427);
-//            } else if (e.getMessage().contains("No available nodes")) {
-//                throw new WebApplicationException(428);
-//            } else if (e.getMessage().contains("Cannot connect with the Scheduler")) {
-//                throw new WebApplicationException(429);
-//            } else if (e.getMessage().contains("Cannot connect with Simple Scheduler")) {
-//                throw new WebApplicationException(430);
-//            } else if (e.getMessage().contains("Cannot connect with Hadoop Scheduler")) {
-//                throw new WebApplicationException(431);
-//            } else if (e.getMessage().contains("Cannot recognize address")) {
-//                throw new WebApplicationException(432);
-//            } else if (e.getMessage().contains("already present in the system")) {  //ERROR vtm.VtM: Domain with name "task0" already present in the system
-//                throw new WebApplicationException(433);  					//net.emotivecloud.vrmm.vtm.VtMException: Domain with name "task0" already present in the system
-//            } else if (e.getMessage().contains("Domain with name")) {  //ERROR vtm.VtM: Domain with name "task0" already present in the system
-//                throw new WebApplicationException(433);  					//net.emotivecloud.vrmm.vtm.VtMException: Domain with name "task0" already present in the system
-//            } else {
-//                throw new WebApplicationException(424);
-//            }
-//        }
-        //return id;
 
 	//Returning created domain.
-	System.out.println("SENDING BACK THE GENERATED DOMAIN OVF REPRESENTATION");
-
-//	Compute d = super.getDomain(id);
-//	return OVFWrapperFactory.create(d.getId(),
-//					d.getCPU(),
-//					d.getMemory(),
-//					new OVFDisk[] {
-//					    new OVFDisk("home",d.getDiskPath(),(long)d.getHomeSize()),
-//					    new OVFDisk("swap",d.getDiskPath(),(long)d.getSwapSize()),
-//					    new OVFDisk("disk",d.getDiskPath(),(long)d.getDiskSize())
-//					},
-//					new OVFNetwork[] {
-//					    new OVFNetwork("net0",d.getIp(),null)
-//					},
-//					new HashMap<String,String>(0)).toCleanString();
-	return null;
+	Collection<OVFDisk> tmpDisks = ovf.getDisks().values();
+	OVFDisk disks[] = tmpDisks.toArray(new OVFDisk[tmpDisks.size()]);
+	
+	Collection<OVFNetwork> tmpNets = ovf.getNetworks().values();
+	OVFNetwork nets[] = tmpNets.toArray(new OVFNetwork[tmpNets.size()]);
+	
+	return OVFWrapperFactory.create(rc.getMessage(),
+					ovf.getCPUsNumber(),
+					ovf.getMemoryMB(),
+					disks,
+					nets,
+					new HashMap<String,String>(0)).toCleanString();
+	
     }
     
     private OVFWrapper parse(String ovfXml) throws DRPOneException {
@@ -315,10 +287,10 @@ public class DRP4OVF{
 		// the separator
 		// TODO: wreaks havoc and destruction if this code runs on an
 		// AMD class CPU. FIX IT
-		buf.append("ARCH = \"");
-		buf.append( (tmp != null) 
-					? tmp.toString()
-					: System.getProperty("os.arch") );
+		buf.append("ARCH = \"i386\"");
+//		buf.append( (tmp != null) 
+//					? tmp.toString()
+//					: System.getProperty("os.arch") );
 		buf.append("\"");
 		// Here we can define the separator with the final value
 		// therefore we need not to update the variable...
