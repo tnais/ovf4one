@@ -10,6 +10,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
@@ -119,15 +120,15 @@ public class DRP4OVF{
 		virtualSwap("swap"),
 		blockDevice("block"),
 		onTheFlyDisk("fs");
-		
+
 		private String asString;
-		
+
 		private DskType(String asString) {
 			this.asString = asString;
 		}
-		
+
 		public String toString() { return asString;	}
-		
+
 		public static DskType fromString(String startingString) {
 			return virtualDisk.asString.equals(startingString) ? virtualDisk
 					: virtualSwap.asString.equals(startingString) ? virtualSwap
@@ -178,26 +179,26 @@ public class DRP4OVF{
         log.info("Environment "+id+" was created.");
 
 
-	//Returning created domain.
-	Collection<OVFDisk> tmpDisks = ovf.getDisks().values();
-	OVFDisk disks[] = tmpDisks.toArray(new OVFDisk[tmpDisks.size()]);
+		//Returning created domain.
+		Collection<OVFDisk> tmpDisks = ovf.getDisks().values();
+		OVFDisk disks[] = tmpDisks.toArray(new OVFDisk[tmpDisks.size()]);
 	
-	Collection<OVFNetwork> tmpNets = ovf.getNetworks().values();
-	OVFNetwork nets[] = tmpNets.toArray(new OVFNetwork[tmpNets.size()]);
+		Collection<OVFNetwork> tmpNets = ovf.getNetworks().values();
+		OVFNetwork nets[] = tmpNets.toArray(new OVFNetwork[tmpNets.size()]);
 	
-	return OVFWrapperFactory.create(rc.getMessage(),
-					ovf.getCPUsNumber(),
-					ovf.getMemoryMB(),
-					disks,
-					nets,
-					new HashMap<String,String>(0)).toCleanString();
-	
+		return OVFWrapperFactory.create(rc.getMessage(),
+						ovf.getCPUsNumber(),
+						ovf.getMemoryMB(),
+						disks,
+						nets,
+						new HashMap<String,String>(0)).toCleanString();
+
     }
     
     private OVFWrapper parse(String ovfXml) throws DRPOneException {
     	OVFWrapper rv = null;
 		StringBuilder cause= new StringBuilder();
-		
+
 		try {
 			rv = OVFWrapperFactory.parse(ovfXml);
 		} catch (JAXBException e) {
@@ -278,7 +279,7 @@ public class DRP4OVF{
 		// OS attribute 
 		// we need a separator there, since there's a comma after the 
 		// first element in the array.
-		
+
 		buf.append("OS = [\n");
 		tmp = ovf.getArchitecture();
 
@@ -295,7 +296,7 @@ public class DRP4OVF{
 		// Here we can define the separator with the final value
 		// therefore we need not to update the variable...
 		String separator = ",\n";
-		
+
 		for( String productProperty: productPropertiesList) {
 			String value = ovf.getProductProperty(productProperty);
 
@@ -339,28 +340,28 @@ public class DRP4OVF{
 		/*
 		 *  Disk attributes
 		 */
-		
-		
+
+
 		// Let's avoid some work to the VM :)
 		// 100 characters should avoid buffer resizing in most cases. 
 		// Don't worry, no buffer overflow ahead :)
 		StringBuilder propertyName = new StringBuilder(100);
-		
+
 		for(OVFDisk ovfDisk : ovf.getDisks().values()) {
 			buf.append("DISK = [\n");
 
 			String dskName = ovfDisk.getId();
 			int dskNameLen = dskName.length();
 			String pathOrURL = ovfDisk.getHref();
-			
+
 			propertyName.delete(0, propertyName.length());
 			propertyName.append(dskName);
 			String typeName = ovf.getProductProperty(propertyName.toString());
-			
+
 			// Whe no disk type is specified, OpenNebula defaults to disk, and we do so.
 			DskType dskType = typeName == null ? DskType.virtualDisk : DskType.fromString(typeName);
 
-			
+
 			Long size = ovfDisk.getCapacityMB();
 
 			if(size == null && (dskType == DskType.virtualSwap || dskType == DskType.onTheFlyDisk))
@@ -369,12 +370,12 @@ public class DRP4OVF{
 
 			propertyName.delete(dskNameLen, propertyName.length());
 			propertyName.append(".target");
-			
+
 			String target = ovf.getProductProperty(propertyName.toString());
 
 			if(target == null && dskType != DskType.virtualSwap)
 				throw new DRPOneException("OVF file is missing mandatory target specification for a disk",StatusCodes.BAD_OVF);
-			
+
 			switch (dskType) {
 
 			case virtualDisk :
@@ -385,7 +386,7 @@ public class DRP4OVF{
 					// We are using a physical disk image
 					buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
 					buf.append("TARGET = \""); buf.append(target); buf.append("\"");
-					
+
 				}
 				else {
 					// No disk source, we have a pre-registered image.
@@ -402,19 +403,19 @@ public class DRP4OVF{
 				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
 				buf.append("SIZE = "); buf.append(size); buf.append("\",\n");
 				buf.append("TARGET = \""); buf.append(target); buf.append("\"");
-				
+
 				break;
-				
+
 			case blockDevice:
 				buf.append("SOURCE = \""); buf.append(pathOrURL); buf.append("\",\n");
 				buf.append("TARGET = \""); buf.append(target); buf.append("\"");
-				
+
 				break;
-				
+
 			case onTheFlyDisk:
 				propertyName.delete(dskNameLen, propertyName.length());
 				propertyName.append(".format");
-				
+
 				String format = ovf.getProductProperty(propertyName.toString());
 
 				if(format == null)
@@ -527,17 +528,31 @@ public class DRP4OVF{
 		return buf.toString();
 	}
     
-/* REMOVE THIS COMMEND AND IMPLEMENT
 	//Retrieve
     @GET
     @Path("/compute/{envid}")
     @Produces("application/xml")
-    public String getCompute(@PathParam("envid") String envId) throws VRMMSchedulerException {
+    public String getCompute(@PathParam("envid") String envId) throws DRPOneException {
 
-        Compute d=null;
-        d = super.getDomain(envId);
-        if(d == null) {
-            throw new WebApplicationException(404);
+        Client ocaClient = null;
+        try {
+        	ocaClient = new Client();
+        }
+        catch (Exception nevermind) {}
+
+        int machineId = 0;
+        
+        try {
+        	machineId = Integer.parseInt(envId);
+        }
+        catch(NumberFormatException nfe) {
+        	throw new DRPOneException("Illegal VM ID "+envId,StatusCodes.BAD_OVF );
+        }
+        
+        OneResponse rc = VirtualMachine.info(ocaClient, machineId);
+        
+        if(rc.isError()) {
+        	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
         }
         
         return OVFWrapperFactory.create(d.getId(),
@@ -553,7 +568,6 @@ public class DRP4OVF{
 					},
 					new HashMap<String,String>(0)).toCleanString();
     }
-REMOVE THIS COMMEND AND IMPLEMENT */
 
 /* REMOVE THIS COMMEND AND IMPLEMENT
  
@@ -1321,9 +1335,11 @@ REMOVE THIS COMMEND AND IMPLEMENT */
         try {
         	ocaClient = new Client();
 		}
-        catch(Exception whocares) {}
+        catch(Exception whocares) {
+        	System.out.println(whocares.getMessage());
+        }
         
-		OneResponse rc = VirtualMachine.info(ocaClient, 0);
+		OneResponse rc = VirtualMachine.info(ocaClient, 9);
 
 		System.out.println(rc.getMessage());
 
