@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+  targetNamespace="http://opennebula.org/XMLSchema" xmlns="http://opennebula.org/XMLSchema">
+
+  <xs:include schemaLocation="vm_types.xsd"/>
+  <xs:element name="VM" type="VM_SIMPLE"/>
+
+</xs:schema>

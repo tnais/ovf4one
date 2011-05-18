@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+    targetNamespace="http://opennebula.org/XMLSchema" xmlns="http://opennebula.org/XMLSchema">
+
+    <xs:complexType name="VM_SIMPLE">
+        <xs:sequence>
+            <xs:element name="ID" type="xs:integer"/>
+            <xs:element name="UID" type="xs:integer"/>
+            <xs:element name="NAME" type="xs:string"/>
+            <xs:element name="LAST_POLL" type="xs:integer"/>
+            <xs:element name="STATE" type="xs:integer"/>
+            <xs:element name="LCM_STATE" type="xs:integer"/>
+            <xs:element name="STIME" type="xs:integer"/>
+            <xs:element name="ETIME" type="xs:integer"/>
+            <xs:element name="DEPLOY_ID" type="xs:string"/>
+            <xs:element name="MEMORY" type="xs:integer"/>
+            <xs:element name="CPU" type="xs:integer"/>
+            <xs:element name="NET_TX" type="xs:integer"/>
+            <xs:element name="NET_RX" type="xs:integer"/>
+            <xs:element name="LAST_SEQ" type="xs:integer"/>
+            <xs:element name="TEMPLATE" type="TemplateType"/>
+			<xs:element name="HISTORY" type="xs:Anytype"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="VM_COMPLEX">
+        <xs:sequence>
+            <xs:element name="ID" type="xs:integer"/>
+            <xs:element name="UID" type="xs:integer"/>
+            <xs:element name="USERNAME" type="xs:string"/>
+            <xs:element name="NAME" type="xs:string"/>
+            <xs:element name="LAST_POLL" type="xs:integer"/>
+            <xs:element name="STATE" type="xs:integer"/>
+            <xs:element name="LCM_STATE" type="xs:integer"/>
+            <xs:element name="STIME" type="xs:integer"/>
+            <xs:element name="ETIME" type="xs:integer"/>
+            <xs:element name="DEPLOY_ID" type="xs:string"/>
+            <xs:element name="MEMORY" type="xs:integer"/>
+            <xs:element name="CPU" type="xs:integer"/>
+            <xs:element name="NET_TX" type="xs:integer"/>
+            <xs:element name="NET_RX" type="xs:integer"/>
+            <xs:element name="LAST_SEQ" type="xs:integer"/>
+            <xs:element name="TEMPLATE" type="TemplateType"/>
+			<xs:element name="HISTORY" type="xs:Anytype"/>
+        </xs:sequence>
+    </xs:complexType>
+
+	<!-- Saint - Tue May 17 19:37:04 2011           -->
+	<!--                                            -->
+	<!-- Saint added this to handle the oca replies -->
+
+<!--
+
+1) http://www.w3schools.com/schema/schema_complex_indicators.asp per le 
+ripetizioni
+
+2) http://www.w3schools.com/schema/schema_complex_any.asp per il context
+
+I blocchi con cdata sono testo.
+
+-->
+	<xs:complexType name="TemplateType">
+	  <xs:sequence>
+		<!-- this will be discarded -->
+		<xs:element name="CONTEXT" type="xs:anyType"/>
+		<!-- it returns a CDATA instead of a number. Could be or
+		     could not be an integer, we will model with something appropriate
+
+             about the all and minOccurs="0", this is a difensive approach.
+			 Maybe some harder decision may occur after a reply from the
+			 OpenNebula fellows
+		-->
+		<xs:element name="CPU" type="xs:anyType" minOccurs="0"/>
+		<xs:element name="DISK" type="DiskType" maxOccurs="unbounded"  minOccurs="0"/>
+		<xs:element name="MEMORY" type="xs:String" minOccurs="0"/>
+		<xs:element name="NAME" type="xs:String" minOccurs="0"/>
+		<xs:element name="NIC" type="NicType" maxOccurs="unbounded"  minOccurs="0"/>
+		<xs:element name="OS" type="OsType"  minOccurs="0"/>
+		<xs:element name="VCPU" type="xs:String" minOccurs="0"/>
+		<xs:element name="VMID" type="xs:String" minOccurs="0"/>
+	  </xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="DiskTipe" >
+	  <xs:sequence>
+	  </xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="NicTipe" >
+	  <xs:sequence>
+		<xs:element name="BRIDGE" type="xs:String" minOccurs="0" />
+		<xs:element name="IP" type="xs:String" minOccurs="0" />
+		<xs:element name="MAC" type="xs:String" minOccurs="0" />
+		<xs:element name="NETWORK" type="xs:String" minOccurs="0" />
+		<xs:element name="NETWORK_ID" type="xs:String" minOccurs="0" />
+	  </xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="OsTipe" >
+	  <xs:sequence>
+	  </xs:sequence>
+	</xs:complexType>
+
+	<!-- /Saint -->
+</xs:schema>
