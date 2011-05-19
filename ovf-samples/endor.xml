@@ -5,6 +5,7 @@
         <ns1:File ns1:href="file:///srv/cloud/one/one-images/ttylinux.img" ns1:id="dummy"/>
         <ns1:File ns1:href="file:///srv/cloud/one/one-images/swap.img" ns1:id="swap"/>
         <ns1:File ns1:href="file:///srv/cloud/one/one-images/block.img" ns1:id="block"/>
+		<ns1:File ns1:href="" ns1:id="auto"/>
     </ns1:References>
     <ns1:DiskSection>
 	  <!-- size of the physical disk -->
@@ -94,13 +95,15 @@
                 <ns4:AutomaticAllocation>true</ns4:AutomaticAllocation>
                 <ns4:ElementName>AUTODISK</ns4:ElementName>
                 <ns4:HostResource>ovf://disk/auto</ns4:HostResource>
+                <ns4:HostResource>ovf://file/auto</ns4:HostResource>
                 <ns4:InstanceID>8</ns4:InstanceID>
                 <ns4:ResourceType>17</ns4:ResourceType>
             </ns1:Item>
             <ns1:Item>
                 <ns4:AutomaticAllocation>true</ns4:AutomaticAllocation>
                 <ns4:ElementName>AUTODISK</ns4:ElementName>
-                <ns4:HostResource>ovf://disk/block</ns4:HostResource>
+				<ns4:HostResource>ovf://disk/auto</ns4:HostResource>
+                <ns4:HostResource>ovf://file/block</ns4:HostResource>
                 <ns4:InstanceID>8</ns4:InstanceID>
                 <ns4:ResourceType>17</ns4:ResourceType>
             </ns1:Item>

@@ -19,7 +19,7 @@
             <xs:element name="NET_RX" type="xs:integer"/>
             <xs:element name="LAST_SEQ" type="xs:integer"/>
             <xs:element name="TEMPLATE" type="TemplateType"/>
-			<xs:element name="HISTORY" type="xs:Anytype"/>
+			<xs:element name="HISTORY" type="xs:anyType"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -41,7 +41,7 @@
             <xs:element name="NET_RX" type="xs:integer"/>
             <xs:element name="LAST_SEQ" type="xs:integer"/>
             <xs:element name="TEMPLATE" type="TemplateType"/>
-			<xs:element name="HISTORY" type="xs:Anytype"/>
+			<xs:element name="HISTORY" type="xs:anyType"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -49,16 +49,6 @@
 	<!--                                            -->
 	<!-- Saint added this to handle the oca replies -->
 
-<!--
-
-1) http://www.w3schools.com/schema/schema_complex_indicators.asp per le 
-ripetizioni
-
-2) http://www.w3schools.com/schema/schema_complex_any.asp per il context
-
-I blocchi con cdata sono testo.
-
--->
 	<xs:complexType name="TemplateType">
 	  <xs:sequence>
 		<!-- this will be discarded -->
@@ -70,34 +60,46 @@ I blocchi con cdata sono testo.
 			 Maybe some harder decision may occur after a reply from the
 			 OpenNebula fellows
 		-->
-		<xs:element name="CPU" type="xs:anyType" minOccurs="0"/>
+		<xs:element name="CPU" type="xs:integer" minOccurs="0"/>
 		<xs:element name="DISK" type="DiskType" maxOccurs="unbounded"  minOccurs="0"/>
-		<xs:element name="MEMORY" type="xs:String" minOccurs="0"/>
-		<xs:element name="NAME" type="xs:String" minOccurs="0"/>
+		<xs:element name="MEMORY" type="xs:string" minOccurs="0"/>
+		<xs:element name="NAME" type="xs:string" minOccurs="0"/>
 		<xs:element name="NIC" type="NicType" maxOccurs="unbounded"  minOccurs="0"/>
 		<xs:element name="OS" type="OsType"  minOccurs="0"/>
-		<xs:element name="VCPU" type="xs:String" minOccurs="0"/>
-		<xs:element name="VMID" type="xs:String" minOccurs="0"/>
+		<xs:element name="VCPU" type="xs:string" minOccurs="0"/>
+		<xs:element name="VMID" type="xs:string" minOccurs="0"/>
 	  </xs:sequence>
 	</xs:complexType>
 
-	<xs:complexType name="DiskTipe" >
+	<xs:complexType name="DiskType" >
+	  <xs:all>
+		<xs:element name="READONLY" type="xs:string" minOccurs="0" />
+		<xs:element name="SOURCE" type="xs:string" minOccurs="0" />
+		<xs:element name="TARGET" type="xs:string" minOccurs="0" />
+		<xs:element name="SIZE" type="xs:string" minOccurs="0" />
+		<xs:element name="TYPE" type="xs:string" minOccurs="0" />
+	  </xs:all>
+	</xs:complexType>
+
+	<xs:complexType name="NicType" >
 	  <xs:sequence>
+		<xs:element name="BRIDGE" type="xs:string" minOccurs="0" />
+		<xs:element name="IP" type="xs:string" minOccurs="0" />
+		<xs:element name="MAC" type="xs:string" minOccurs="0" />
+		<xs:element name="NETWORK" type="xs:string" minOccurs="0" />
+		<xs:element name="NETWORK_ID" type="xs:string" minOccurs="0" />
 	  </xs:sequence>
 	</xs:complexType>
 
-	<xs:complexType name="NicTipe" >
+	<xs:complexType name="OsType" >
 	  <xs:sequence>
-		<xs:element name="BRIDGE" type="xs:String" minOccurs="0" />
-		<xs:element name="IP" type="xs:String" minOccurs="0" />
-		<xs:element name="MAC" type="xs:String" minOccurs="0" />
-		<xs:element name="NETWORK" type="xs:String" minOccurs="0" />
-		<xs:element name="NETWORK_ID" type="xs:String" minOccurs="0" />
-	  </xs:sequence>
-	</xs:complexType>
-
-	<xs:complexType name="OsTipe" >
-	  <xs:sequence>
+		<xs:element name="ARCH" type="xs:string" minOccurs="0" />
+		<xs:element name="BOOT" type="xs:string" minOccurs="0" />
+		<xs:element name="BOOTLOADER" type="xs:string" minOccurs="0" />
+		<xs:element name="ROOT" type="xs:string" minOccurs="0" />
+		<xs:element name="KERNEL" type="xs:string" minOccurs="0" />
+		<xs:element name="KERNEL_CMD" type="xs:string" minOccurs="0" />
+		<xs:element name="INITRD" type="xs:string" minOccurs="0" />
 	  </xs:sequence>
 	</xs:complexType>
 

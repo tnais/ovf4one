@@ -71,26 +71,51 @@ public class DRP4OVF{
     	}
     }
     
-    // These constants describe the supported Product Properties
-    //-----------------------------------------------------------
+	/* ===============================================================
+	 *
+	 * These constants describe the supported Product Properties
+	 * We use Product Properties to hold informations meaningful for
+	 * Opennebula but not supported by OVF
+	 */
 
 	// Path to the kernel image - mostly unused if you don't use XEN
     public final static String KERNEL="KERNEL";
+
 	// Path to the initrd image - mostly unused if you don't use XEN
 	public final static String INITRD="INITRD";
+
 	// Device to be mounted as root
 	public final static String ROOT="ROOT";
+
 	// Extra arguments to boot the kernel
 	public final static String KERNEL_CMD="KERNEL_CMD";
+
 	// Path to the bootloader executable  - mostly unused if you don't use XEN
 	public final static String BOOTLOADER="BOOTLOADER";
+
 	// Tyoe if the boot device, must be one of those in BootType enum
 	public final static String BOOT="BOOT";
+
+	// Architecture to be emulated. We support i386 (default) and x86_64
+	public final static String ARCH="ARCH";
+	public final static String I_386="i386";
+	public final static String I_686="i686";
+	public final static String X86_64="x86_64";
+
+
+	// Hypervisor in use - we support KVM and XEN
+	public final static String HYPERVISOR="HYPERVISOR";
+
 
 	private final static String productPropertiesList[] = 
 		new String[] { KERNEL, INITRD, ROOT, KERNEL_CMD, BOOTLOADER, BOOT };
 
 
+	/* ===============================================================
+	 *
+	 * This enum models the supported types for the BOOT.
+	 *
+	 */
 	private enum BootType {
 		hd("hd"),
 		fd("fd"),
@@ -115,6 +140,12 @@ public class DRP4OVF{
 
 	}
 
+	/* ===============================================================
+	 *
+	 * This enum models the supported types for the DISK. We consider
+	 * virtual CD, floppies and such all being 'disks'
+	 *
+	 */
 	private enum DskType {
 		virtualDisk("disk"),
 		virtualSwap("swap"),
@@ -137,6 +168,10 @@ public class DRP4OVF{
 		}
 	}
     
+	/**
+	 * getGreeting: a toy method that helps us to see that this class
+	 * is correctly handled by jersey
+	 */
 	@GET 
 	@Produces("text/plain")
     public String getGreeting() {
@@ -151,11 +186,18 @@ public class DRP4OVF{
 
     /****************************COMPUTE methods.******************************/
 
-    //Create
     @POST
     @Path("/compute")
     @Consumes("application/xml")
-    public String createCompute(String ovfXml) throws DRPOneException { // (Map<String, Object>);
+    /**
+	 * Method that managers the post to
+	 * http://host/ovf4one/compute. This creates a vm instance
+	 * @param ovfXml a <code>String</code> an OVF file with the
+	 * informations that drive the VM instance creation
+	 * @return a <code>String</code> an OVF input with the VM instance ID
+	 * @exception DRPOneException If something goes wrong, what else ?
+	 */
+	public String createCompute(String ovfXml) throws DRPOneException { // (Map<String, Object>);
         String id = "";
         
         Client ocaClient = null;
@@ -182,10 +224,10 @@ public class DRP4OVF{
 		//Returning created domain.
 		Collection<OVFDisk> tmpDisks = ovf.getDisks().values();
 		OVFDisk disks[] = tmpDisks.toArray(new OVFDisk[tmpDisks.size()]);
-	
+
 		Collection<OVFNetwork> tmpNets = ovf.getNetworks().values();
 		OVFNetwork nets[] = tmpNets.toArray(new OVFNetwork[tmpNets.size()]);
-	
+
 		return OVFWrapperFactory.create(rc.getMessage(),
 						ovf.getCPUsNumber(),
 						ovf.getMemoryMB(),
@@ -194,6 +236,65 @@ public class DRP4OVF{
 						new HashMap<String,String>(0)).toCleanString();
 
     }
+
+
+	/**
+	 * Method to manage the get to
+	 * http://host/ovf4one/compute/[envid], that retrieves data about
+	 * the given VM instance
+	 *
+	 * @param envId a <code>String</code> the ID of the VM instance we are
+	 * interested in
+	 * @return a <code>String</code> an OVF file with the required
+	 * informations
+	 * @exception DRPOneException If something goes wrong, what else ?
+	 */
+    @GET
+    @Path("/compute/{envid}")
+    @Produces("application/xml")
+	public String getCompute(@PathParam("envid") String envId) throws DRPOneException {
+
+        Client ocaClient = null;
+        try {
+        	ocaClient = new Client();
+        }
+        catch (Exception nevermind) {}
+
+        int machineId = 0;
+        
+        try {
+        	machineId = Integer.parseInt(envId);
+        }
+        catch(NumberFormatException nfe) {
+        	throw new DRPOneException("Illegal VM ID "+envId,StatusCodes.BAD_OVF );
+        }
+        
+        OneResponse rc = VirtualMachine.info(ocaClient, machineId);
+        
+        if(rc.isError()) {
+        	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
+        }
+        
+        return "" /*OVFWrapperFactory.create(d.getId(),
+					d.getCPU(),
+					d.getMemory(),
+					new OVFDisk[] {
+					    new OVFDisk("home",d.getDiskPath(),(long)d.getHomeSize()),
+					    new OVFDisk("swap",d.getDiskPath(),(long)d.getSwapSize()),
+					    new OVFDisk("disk",d.getDiskPath(),(long)d.getDiskSize())
+					},
+					new OVFNetwork[] {
+					    new OVFNetwork("net0",d.getIp(),null)
+					},
+					new HashMap<String,String>(0)).toCleanString()*/;
+    }
+
+	/* ==============================================================
+	 * ==============================================================
+	 *
+	 * private helpers for the createCompute method
+	 *
+	 */
     
     private OVFWrapper parse(String ovfXml) throws DRPOneException {
     	OVFWrapper rv = null;
@@ -233,8 +334,10 @@ public class DRP4OVF{
 
 
 	private boolean isKVMInUse(OVFWrapper ovf) {
-		// TODO: just a stub to get the code compile and run... with KVM.
-		return true;
+
+		String hyperName = ovf.getProductProperty(HYPERVISOR);
+
+		return hyperName == null || "kvm".equalsIgnoreCase(hyperName) ;
 	}
 
 	// Generates a description starting from an ovf wrapper.
@@ -245,10 +348,11 @@ public class DRP4OVF{
 
 		boolean weUseKVM =  isKVMInUse(ovf);
 
-		// These are flags to check if a certain value is
-		// supplied. These are all values that are mandatory or not
-		// depending on the hypervisor in use...
-//		boolean weGotArch = false;
+		// These are flags to check if a certain mandatory[*] values are
+		// supplied with the OVF. 
+		//
+		// [*] some values are mandatory with XEN, other with KVM...
+		//
 		boolean weGotKernel = false;
 		boolean weGotBootloader = false;
 		boolean weGotBoot = false;
@@ -286,13 +390,23 @@ public class DRP4OVF{
 		// ARCH is the firs element we place, no separator goes
 		// before, but if we put one in the file we need to change
 		// the separator
-		// TODO: wreaks havoc and destruction if this code runs on an
-		// AMD class CPU. FIX IT
-		buf.append("ARCH = \"i386\"");
-//		buf.append( (tmp != null) 
-//					? tmp.toString()
-//					: System.getProperty("os.arch") );
+		//
+		String archName = ovf.getProductProperty(ARCH);
+
+		if (archName == null)
+			archName = I_386;
+		else if( 
+			! ( I_386.equals(archName) ||
+				I_686.equals(archName) ||
+				X86_64.equals(archName) )
+			)
+			throw new DRPOneException("Illegal architecture "+archName,StatusCodes.BAD_OVF );
+
+
+		buf.append("ARCH = \"");
+		buf.append(archName);
 		buf.append("\"");
+
 		// Here we can define the separator with the final value
 		// therefore we need not to update the variable...
 		String separator = ",\n";
@@ -356,6 +470,8 @@ public class DRP4OVF{
 
 			propertyName.delete(0, propertyName.length());
 			propertyName.append(dskName);
+			propertyName.append(".type");
+
 			String typeName = ovf.getProductProperty(propertyName.toString());
 
 			// Whe no disk type is specified, OpenNebula defaults to disk, and we do so.
@@ -467,8 +583,6 @@ public class DRP4OVF{
 		// 
 		// We list devices in order eth0, eth1, eth2... The context script will get
 		// them out and prepare the network configuration files.
-		//
-		// TODO: finish
 
 		buf.append("CONTEXT = [\n");
 		separator = "";
@@ -480,14 +594,14 @@ public class DRP4OVF{
 				tmp = ovfNetwork.getIp();
 				if( tmp != null) {
 					buf.append(separator);
-					buf.append("IP_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+					buf.append("IP_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\"\n");
 					separator = ",\n";
 				}
 
 				tmp = ovfNetwork.getMac();
 				if( tmp != null ) {
 					buf.append(separator);
-					buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\",\n");
+					buf.append("MAC_"); buf.append(ethNumber); buf.append(" = \""); buf.append(tmp); buf.append("\"\n");
 					separator = ",\n";
 
 				}
@@ -528,46 +642,6 @@ public class DRP4OVF{
 		return buf.toString();
 	}
     
-	//Retrieve
-    @GET
-    @Path("/compute/{envid}")
-    @Produces("application/xml")
-    public String getCompute(@PathParam("envid") String envId) throws DRPOneException {
-
-        Client ocaClient = null;
-        try {
-        	ocaClient = new Client();
-        }
-        catch (Exception nevermind) {}
-
-        int machineId = 0;
-        
-        try {
-        	machineId = Integer.parseInt(envId);
-        }
-        catch(NumberFormatException nfe) {
-        	throw new DRPOneException("Illegal VM ID "+envId,StatusCodes.BAD_OVF );
-        }
-        
-        OneResponse rc = VirtualMachine.info(ocaClient, machineId);
-        
-        if(rc.isError()) {
-        	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
-        }
-        
-        return OVFWrapperFactory.create(d.getId(),
-					d.getCPU(),
-					d.getMemory(),
-					new OVFDisk[] {
-					    new OVFDisk("home",d.getDiskPath(),(long)d.getHomeSize()),
-					    new OVFDisk("swap",d.getDiskPath(),(long)d.getSwapSize()),
-					    new OVFDisk("disk",d.getDiskPath(),(long)d.getDiskSize())
-					},
-					new OVFNetwork[] {
-					    new OVFNetwork("net0",d.getIp(),null)
-					},
-					new HashMap<String,String>(0)).toCleanString();
-    }
 
 /* REMOVE THIS COMMEND AND IMPLEMENT
  
@@ -1339,7 +1413,7 @@ REMOVE THIS COMMEND AND IMPLEMENT */
         	System.out.println(whocares.getMessage());
         }
         
-		OneResponse rc = VirtualMachine.info(ocaClient, 9);
+		OneResponse rc = VirtualMachine.info(ocaClient, 14);
 
 		System.out.println(rc.getMessage());
 
