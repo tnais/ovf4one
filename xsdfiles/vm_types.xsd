@@ -72,13 +72,13 @@
 	</xs:complexType>
 
 	<xs:complexType name="DiskType" >
-	  <xs:all>
+	  <xs:sequence>
 		<xs:element name="READONLY" type="xs:string" minOccurs="0" />
+		<xs:element name="SIZE" type="xs:string" minOccurs="0" />
 		<xs:element name="SOURCE" type="xs:string" minOccurs="0" />
 		<xs:element name="TARGET" type="xs:string" minOccurs="0" />
-		<xs:element name="SIZE" type="xs:string" minOccurs="0" />
 		<xs:element name="TYPE" type="xs:string" minOccurs="0" />
-	  </xs:all>
+	  </xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="NicType" >
@@ -96,10 +96,10 @@
 		<xs:element name="ARCH" type="xs:string" minOccurs="0" />
 		<xs:element name="BOOT" type="xs:string" minOccurs="0" />
 		<xs:element name="BOOTLOADER" type="xs:string" minOccurs="0" />
-		<xs:element name="ROOT" type="xs:string" minOccurs="0" />
+		<xs:element name="INITRD" type="xs:string" minOccurs="0" />
 		<xs:element name="KERNEL" type="xs:string" minOccurs="0" />
 		<xs:element name="KERNEL_CMD" type="xs:string" minOccurs="0" />
-		<xs:element name="INITRD" type="xs:string" minOccurs="0" />
+		<xs:element name="ROOT" type="xs:string" minOccurs="0" />
 	  </xs:sequence>
 	</xs:complexType>
 
