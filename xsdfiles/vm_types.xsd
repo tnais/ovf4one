@@ -73,6 +73,7 @@
 
 	<xs:complexType name="DiskType" >
 	  <xs:sequence>
+		<xs:element name="DISK_ID" type="xs:string" minOccurs="0" />
 		<xs:element name="READONLY" type="xs:string" minOccurs="0" />
 		<xs:element name="SIZE" type="xs:string" minOccurs="0" />
 		<xs:element name="SOURCE" type="xs:string" minOccurs="0" />

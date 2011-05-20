@@ -44,6 +44,11 @@ public class OCATemplateWrapper {
 	private String vmId;
 
 	/**
+	 * Describe context here.
+	 */
+	private Object context;
+
+	/**
 	 * Describe OCANicWrapper> here.
 	 */
 	private Map<String, OCANicWrapper> nics;
@@ -204,4 +209,24 @@ public class OCATemplateWrapper {
 	public final void setVmId(final String newVmId) {
 		this.vmId = newVmId;
 	}
+
+	/**
+	 * Get the <code>Context</code> value.
+	 *
+	 * @return an <code>Object</code> 
+	 */
+	public final Object getContext() {
+		return context;
+	}
+
+	/**
+	 * Set the <code>Context</code> value.
+	 *
+	 * @param newContext The new Context value.
+	 */
+	public final void setContext(final Object newContext) {
+		this.context = newContext;
+	}
+
+
 }

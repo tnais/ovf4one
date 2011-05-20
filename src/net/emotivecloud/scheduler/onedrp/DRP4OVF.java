@@ -3,8 +3,6 @@ package net.emotivecloud.scheduler.onedrp;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -20,6 +18,10 @@ import javax.xml.bind.PropertyException;
 import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.ValidationException;
 
+import net.emotivecloud.utils.oca.OCADiskWrapper;
+import net.emotivecloud.utils.oca.OCANicWrapper;
+import net.emotivecloud.utils.oca.OCAWrapper;
+import net.emotivecloud.utils.oca.OCAWrapperFactory;
 import net.emotivecloud.utils.ovf.OVFDisk;
 import net.emotivecloud.utils.ovf.OVFException;
 import net.emotivecloud.utils.ovf.OVFNetwork;
@@ -28,7 +30,6 @@ import net.emotivecloud.utils.ovf.OVFWrapperFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dmtf.schemas.ovf.envelope._1.VirtualSystemCollectionType;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
@@ -51,7 +52,7 @@ public class DRP4OVF{
 
     @Context
     UriInfo uriInfo;
-    private static int machineId = 0;
+//    private static int machineId = 0;
     private Log log = LogFactory.getLog(DRP4OVF.class);
     
     /*
@@ -275,22 +276,43 @@ public class DRP4OVF{
         	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
         }
   
+		OCAWrapper oca = parseOca(rc.getMessage());
+        
         // TODO: use rc.message() as input of OCAWwrapperFactory.parse()
         // TODO: use the OCAWrapper just created to supply data to OVFWrapperFactory.create()
         // TODO: the disk and net thing could be a bit tricky, but use the commented example
         
-        return "" /*OVFWrapperFactory.create(d.getId(),
-					d.getCPU(),
-					d.getMemory(),
-					new OVFDisk[] {
-					    new OVFDisk("home",d.getDiskPath(),(long)d.getHomeSize()),
-					    new OVFDisk("swap",d.getDiskPath(),(long)d.getSwapSize()),
-					    new OVFDisk("disk",d.getDiskPath(),(long)d.getDiskSize())
-					},
-					new OVFNetwork[] {
-					    new OVFNetwork("net0",d.getIp(),null)
-					},
-					new HashMap<String,String>(0)).toCleanString()*/;
+		Collection<OCADiskWrapper> diskList = oca.getTemplate().getDisks().values();
+		
+		OVFDisk diskArray[] = new OVFDisk[diskList.size()];
+		
+		int counter = 0;
+		
+		for(OCADiskWrapper disk: diskList) {
+			diskArray[counter++] = new OVFDisk(disk.getDiskId(), 
+					disk.getSource(), 
+					disk.getSize());
+		}
+		
+		Collection<OCANicWrapper> nicList = oca.getTemplate().getNics().values();
+		
+		OVFNetwork nicArray[] = new OVFNetwork[nicList.size()];
+		
+		counter = 0;
+		
+		for(OCANicWrapper nic: nicList) {
+			nicArray[counter++] = new OVFNetwork(nic.getNetwork(), 
+					nic.getIp(), 
+					nic.getMac());
+		}
+		
+        String rv = OVFWrapperFactory.create(""+oca.getId(),
+					oca.getCpu(),
+					oca.getMemory(),
+					diskArray,
+					nicArray,
+					new HashMap<String,String>(0)).toCleanString();
+		return rv;
     }
 
 	/* ==============================================================
@@ -644,7 +666,42 @@ public class DRP4OVF{
 		return buf.toString();
 	}
     
+	/* ==============================================================
+	 * ==============================================================
+	 *
+	 * private helpers for the getCompute method
+	 *
+	 */
 
+    private OCAWrapper parseOca(String s) {
+    	OCAWrapper rv = null;
+		StringBuilder cause= new StringBuilder();
+    	try {
+    		rv=  OCAWrapperFactory.parse(s);
+    	}
+    	catch(JAXBException e)  {
+			if (e instanceof PropertyException)
+				cause.append("Access to property failed: ");
+			else if (e instanceof MarshalException)
+				cause.append("Marshalling failed: ");
+			else if (e instanceof UnmarshalException)
+				cause.append("Unmarshalling failed: ");
+			else if (e instanceof ValidationException)
+				cause.append("XML Validation failed: ");
+			else {
+				cause.append("Unespected ");
+				cause.append(e.getClass().getName());
+				cause.append(": ");
+			}
+			cause.append(e.getMessage());
+			log.error(cause.toString());
+			if(log.isTraceEnabled())
+				log.trace(cause, e);
+			throw new DRPOneException(cause.toString(),e,StatusCodes.ONE_FAILURE);
+    	}
+    	return rv;
+    }
+    
 /* REMOVE THIS COMMEND AND IMPLEMENT
  
     @GET

@@ -27,12 +27,17 @@ public class OCADiskWrapper {
 	/**
 	 * Describe size here.
 	 */
-	private int size;
+	private long size;
 
 	/**
 	 * Describe type here.
 	 */
 	private String type;
+
+	/**
+	 * Describe diskId here.
+	 */
+	private String diskId;
 
 	/**
 	 * Get the <code>Readonly</code> value.
@@ -93,7 +98,7 @@ public class OCADiskWrapper {
 	 *
 	 * @return an <code>int</code> 
 	 */
-	public final int getSize() {
+	public final long getSize() {
 		return size;
 	}
 
@@ -102,7 +107,7 @@ public class OCADiskWrapper {
 	 *
 	 * @param newSize The new Size value.
 	 */
-	public final void setSize(final int newSize) {
+	public final void setSize(final long newSize) {
 		this.size = newSize;
 	}
 
@@ -122,5 +127,23 @@ public class OCADiskWrapper {
 	 */
 	public final void setType(final String newType) {
 		this.type = newType;
+	}
+
+	/**
+	 * Get the <code>DiskId</code> value.
+	 *
+	 * @return a <code>String</code> 
+	 */
+	public final String getDiskId() {
+		return diskId;
+	}
+
+	/**
+	 * Set the <code>DiskId</code> value.
+	 *
+	 * @param newDiskId The new DiskId value.
+	 */
+	public final void setDiskId(final String newDiskId) {
+		this.diskId = newDiskId;
 	}
 }
