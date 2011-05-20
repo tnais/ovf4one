@@ -1,10 +1,14 @@
 package net.emotivecloud.utils.oca;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import java.util.logging.Logger;
 import java.io.ByteArrayInputStream;
+import java.util.logging.Logger;
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.Unmarshaller;
+import org.opennebula.xmlschema.VMSIMPLE;
+import javax.xml.bind.JAXBException;
+import java.io.InputStream;
+
 
 /**
  * Class <code>OCAWrapperFactory</code> Creates an OCAWrapper from the
@@ -19,28 +23,28 @@ public class OCAWrapperFactory {
     private static Unmarshaller u = null;
     private static Logger log;
     static {
-        log = Logger.getLogger(OVFWrapperFactory.class.getName());
+        log = Logger.getLogger(OCAWrapperFactory.class.getName());
         try {
-            jbc = JAXBContext.newInstance(EnvelopeType.class);
+            jbc = JAXBContext.newInstance(VMSIMPLE.class);
             u = jbc.createUnmarshaller();
         } catch (JAXBException e) {
             log.severe(e.getMessage());
         }
     }
 
-	public static OCAWrapper create (OCAWrapper ) {
-		
+	public static OCAWrapper create (VMSIMPLE vmSimple) {
+		return null;
 	}
-	
-			
-	public static VMSIMPLE parse(String xml) throws JAXBException{
+
+
+	public static OCAWrapper parse(String xml) throws JAXBException {
 		return parse(new ByteArrayInputStream(xml.getBytes()));
 	}
-	
-	public static VMSIMPLE parse(InputStream is) throws JAXBException {
+
+	public static OCAWrapper parse(InputStream is) throws JAXBException {
 		return create( 
-			(OCAWrapper) ((JAXBElement) u.unmarshal(is)).getValue());
-		
+			(VMSIMPLE) ((JAXBElement) u.unmarshal(is)).getValue());
+
 	}
-	
+
 }
