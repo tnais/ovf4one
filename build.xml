@@ -17,7 +17,9 @@
 
 	     It seems it works!-->
 	<javac srcdir="src" destdir="WebContent/WEB-INF/classes/"
-		   includeantruntime="false">
+		   includeantruntime="false"
+		   debug="true"
+		   debuglevel="lines,vars,source">
 	  <classpath>
 		<fileset dir="WebContent/WEB-INF/lib">
 		  <include name="*.jar" />

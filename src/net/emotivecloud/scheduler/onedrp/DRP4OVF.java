@@ -274,6 +274,10 @@ public class DRP4OVF{
         if(rc.isError()) {
         	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
         }
+  
+        // TODO: use rc.message() as input of OCAWwrapperFactory.parse()
+        // TODO: use the OCAWrapper just created to supply data to OVFWrapperFactory.create()
+        // TODO: the disk and net thing could be a bit tricky, but use the commented example
         
         return "" /*OVFWrapperFactory.create(d.getId(),
 					d.getCPU(),
@@ -623,13 +627,11 @@ public class DRP4OVF{
 		log.trace(buf.toString());
 		System.out.println(buf.toString());
 
-		if(! ( /*(weGotArch || ! weUseKVM)        // this is mandatory for KVM only
-			   &&*/ (weGotKernel || weUseKVM)     // this is mandatory for XEN only
+		if(! ( (weGotKernel || weUseKVM)     // this is mandatory for XEN only
 			   && (weGotBootloader || weUseKVM) // this is mandatory for XEN only
 			   && (weGotBoot  || ! weUseKVM)    // this is mandatory for KVM only
 			   && weGotDisk) ) {
 			StringBuilder msg = new StringBuilder("These problem in the OVF file prevent correct execution of the command:");
-//			msg.append( (weGotArch || ! weUseKVM)     ? "" : "\n- Missing ARCHitecture specification for use with KVM");
 			msg.append( (weGotKernel || weUseKVM)     ? "" : "\n- Missing KERNEL specification for use with XEN");
 			msg.append( (weGotBootloader || weUseKVM) ? "" : "\n- Missing BOOTLOADER specification for use with XEN");
 			msg.append( (weGotBoot  || ! weUseKVM)    ? "" : "\n- Missing BOOT device specification for use with KVM");
