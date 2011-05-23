@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
+import org.xml.sax.SAXException;
 
 import com.sun.jersey.spi.resource.Singleton;
 
@@ -275,13 +276,14 @@ public class DRP4OVF{
         if(rc.isError()) {
         	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
         }
+        
+        String tmp = rc.getMessage();
+        StringBuilder xmlReply = new StringBuilder(64+tmp.length());
+        xmlReply.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+        xmlReply.append(tmp);
   
-		OCAWrapper oca = parseOca(rc.getMessage());
-        
-        // TODO: use rc.message() as input of OCAWwrapperFactory.parse()
-        // TODO: use the OCAWrapper just created to supply data to OVFWrapperFactory.create()
-        // TODO: the disk and net thing could be a bit tricky, but use the commented example
-        
+		OCAWrapper oca = parseOca(xmlReply.toString());
+                
 		Collection<OCADiskWrapper> diskList = oca.getTemplate().getDisks().values();
 		
 		OVFDisk diskArray[] = new OVFDisk[diskList.size()];
@@ -678,6 +680,10 @@ public class DRP4OVF{
 		StringBuilder cause= new StringBuilder();
     	try {
     		rv=  OCAWrapperFactory.parse(s);
+    	}
+    	catch(SAXException se) {
+    		
+    		throw new DRPOneException("XML Parsing error",se,StatusCodes.INTERNAL);
     	}
     	catch(JAXBException e)  {
 			if (e instanceof PropertyException)

@@ -80,7 +80,7 @@ public class OCATemplateWrapper {
 	 *
 	 * @param newCpu The new Cpu value.
 	 */
-	public final void setCpu(final int newCpu) {
+	public final void setCpu(int newCpu) {
 		this.cpu = newCpu;
 	}
 

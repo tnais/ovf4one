@@ -15,5 +15,6 @@ public interface StatusCodes {
 	// TODO: revise these with Mario Macías
 	static final int XML_PROBLEM = 415;
 	static final int BAD_OVF = 460;
+	static final int INTERNAL = 500;
 
 }
