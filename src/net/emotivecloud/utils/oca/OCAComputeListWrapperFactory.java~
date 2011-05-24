@@ -1,0 +1,15 @@
+package net.emotivecloud.utils.oca;
+
+/**
+ * Describe class OCAComputeListWrapperFactory here.
+ *
+ *
+ * Created: Tue May 24 16:22:22 2011
+ *
+ * @author <a href="mailto:saint@eng.it">Gian Uberto Lauri</a>
+ * @version $Revision$
+ */
+public class OCAComputeListWrapperFactory {
+
+
+}
