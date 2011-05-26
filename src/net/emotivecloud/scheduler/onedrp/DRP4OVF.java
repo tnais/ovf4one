@@ -18,10 +18,14 @@ import javax.xml.bind.PropertyException;
 import javax.xml.bind.UnmarshalException;
 import javax.xml.bind.ValidationException;
 
+import net.emotivecloud.commons.ListStrings;
+import net.emotivecloud.utils.oca.OCAComplexComputeWrapper;
+import net.emotivecloud.utils.oca.OCAComputeListWrapper;
+import net.emotivecloud.utils.oca.OCAComputeListWrapperFactory;
 import net.emotivecloud.utils.oca.OCADiskWrapper;
 import net.emotivecloud.utils.oca.OCANicWrapper;
-import net.emotivecloud.utils.oca.OCAWrapper;
-import net.emotivecloud.utils.oca.OCAWrapperFactory;
+import net.emotivecloud.utils.oca.OCAComputeWrapper;
+import net.emotivecloud.utils.oca.OCAComputeWrapperFactory;
 import net.emotivecloud.utils.ovf.OVFDisk;
 import net.emotivecloud.utils.ovf.OVFException;
 import net.emotivecloud.utils.ovf.OVFNetwork;
@@ -33,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
+import org.opennebula.client.vm.VirtualMachinePool;
 import org.xml.sax.SAXException;
 
 import com.sun.jersey.spi.resource.Singleton;
@@ -169,19 +174,52 @@ public class DRP4OVF{
 									: onTheFlyDisk.asString.equals(startingString) ? onTheFlyDisk : null;
 		}
 	}
-    
-	/**
-	 * getGreeting: a toy method that helps us to see that this class
-	 * is correctly handled by jersey
-	 */
-	@GET 
-	@Produces("text/plain")
-    public String getGreeting() {
 
-        return "It seems that the GET works";
+    /***************************************************************************
+     *         Methods without a correspondence in the OCCI interface.         *
+     **************************************************************************/
 
+    @GET
+    @Path("/info")
+    @Produces("text/plain")
+    public String info() {
+        return "DRP4OVF is running";
     }
 
+    @GET
+    @Path("/")
+    @Produces("application/xml")
+    public OCAComputeListWrapper rootMethod() {
+        return getAllEnvironments();
+    }
+
+    @GET
+    @Path("/compute/all")
+    @Produces("application/xml")
+    public OCAComputeListWrapper getAllEnvironments() {
+
+        Client ocaClient = null;
+        try {
+        	ocaClient = new Client();
+        }
+        catch (Exception nevermind) {}
+
+        OneResponse rc = VirtualMachinePool.info(ocaClient, 1);
+        
+        if(rc.isError()) {
+        	log.error("Failed to retrieve VMs for user : " + rc.getErrorMessage());
+        }
+
+        
+        String tmp = rc.getMessage();
+        StringBuilder xmlReply = new StringBuilder(64+tmp.length());
+        xmlReply.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+        xmlReply.append(tmp);
+
+        return parseOcaComputeList(xmlReply.toString());
+    }
+
+	
     /***************************************************************************
      *         Methods with a correspondence in the OCCI interface.            *
      **************************************************************************/
@@ -274,7 +312,7 @@ public class DRP4OVF{
         OneResponse rc = VirtualMachine.info(ocaClient, machineId);
         
         if(rc.isError()) {
-        	log.error("Failed to retrieve " + envId +": " + rc.getErrorMessage());
+        	log.error("Failed to retrieve VM with ID " + envId +": " + rc.getErrorMessage());
         }
         
         String tmp = rc.getMessage();
@@ -282,7 +320,7 @@ public class DRP4OVF{
         xmlReply.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
         xmlReply.append(tmp);
   
-		OCAWrapper oca = parseOca(xmlReply.toString());
+		OCAComputeWrapper oca = parseOcaCompute(xmlReply.toString());
                 
 		Collection<OCADiskWrapper> diskList = oca.getTemplate().getDisks().values();
 		
@@ -317,6 +355,42 @@ public class DRP4OVF{
 		return rv;
     }
 
+    @GET
+    @Path("/compute")
+    @Produces("application/xml")
+    public ListStrings getComputes() {
+        ListStrings ret = new ListStrings();
+
+        Client ocaClient = null;
+        try {
+        	ocaClient = new Client();
+        }
+        catch (Exception nevermind) {}
+
+        OneResponse rc = VirtualMachinePool.info(ocaClient, -1);
+        
+        if(rc.isError()) {
+        	log.error("Failed to retrieve VMs for user : " + rc.getErrorMessage());
+        }
+
+        
+        String tmp = rc.getMessage();
+        StringBuilder xmlReply = new StringBuilder(64+tmp.length());
+        xmlReply.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+        xmlReply.append(tmp);
+
+        OCAComputeListWrapper oca = parseOcaComputeList(xmlReply.toString());
+
+        
+        for (OCAComplexComputeWrapper complexCompute: oca) {
+            ret.add(""+complexCompute.getId());
+        }
+
+        
+        return ret;
+    }
+
+    
 	/* ==============================================================
 	 * ==============================================================
 	 *
@@ -324,7 +398,7 @@ public class DRP4OVF{
 	 *
 	 */
     
-    private OVFWrapper parse(String ovfXml) throws DRPOneException {
+	private OVFWrapper parse(String ovfXml) throws DRPOneException {
     	OVFWrapper rv = null;
 		StringBuilder cause= new StringBuilder();
 
@@ -675,14 +749,13 @@ public class DRP4OVF{
 	 *
 	 */
 
-    private OCAWrapper parseOca(String s) {
-    	OCAWrapper rv = null;
+    private OCAComputeWrapper parseOcaCompute(String s) {
+    	OCAComputeWrapper rv = null;
 		StringBuilder cause= new StringBuilder();
     	try {
-    		rv=  OCAWrapperFactory.parse(s);
+    		rv=  OCAComputeWrapperFactory.parse(s);
     	}
     	catch(SAXException se) {
-    		
     		throw new DRPOneException("XML Parsing error",se,StatusCodes.INTERNAL);
     	}
     	catch(JAXBException e)  {
@@ -708,23 +781,45 @@ public class DRP4OVF{
     	return rv;
     }
     
-/* REMOVE THIS COMMEND AND IMPLEMENT
- 
-    @GET
-    @Path("/compute")
-    @Produces("application/xml")
-    public ListStrings getComputes() {
-        ListStrings ret = new ListStrings();
+    
+	/* ==============================================================
+	 * ==============================================================
+	 *
+	 * private helpers for the getComputes method
+	 *
+	 */
+    private OCAComputeListWrapper parseOcaComputeList(String s) {
+    	OCAComputeListWrapper rv = null;
+		StringBuilder cause= new StringBuilder();
+    	try {
+    		rv=  OCAComputeListWrapperFactory.parseList(s);
+    	}
+    	catch(SAXException se) {
+    		throw new DRPOneException("XML Parsing error",se,StatusCodes.INTERNAL);
+    	}
+    	catch(JAXBException e)  {
+			if (e instanceof PropertyException)
+				cause.append("Access to property failed: ");
+			else if (e instanceof MarshalException)
+				cause.append("Marshalling failed: ");
+			else if (e instanceof UnmarshalException)
+				cause.append("Unmarshalling failed: ");
+			else if (e instanceof ValidationException)
+				cause.append("XML Validation failed: ");
+			else {
+				cause.append("Unespected ");
+				cause.append(e.getClass().getName());
+				cause.append(": ");
+			}
+			cause.append(e.getMessage());
+			log.error(cause.toString());
+			if(log.isTraceEnabled())
+				log.trace(cause, e);
+			throw new DRPOneException(cause.toString(),e,StatusCodes.ONE_FAILURE);
+    	}
+    	return rv;
 
-        List<Compute> domains = super.getDomains();
-
-        for (int i=0; i<domains.size(); i++) {
-            ret.add(domains.get(i).getId());
-        }
-
-        return ret;
     }
-REMOVE THIS COMMEND AND IMPLEMENT */
 
     
 /* REMOVE THIS COMMEND AND IMPLEMENT    
@@ -770,39 +865,9 @@ REMOVE THIS COMMEND AND IMPLEMENT */
     }
 REMOVE THIS COMMEND AND IMPLEMENT */
 
-    /***************************************************************************
-     *         Methods without a correspondence in the OCCI interface.         *
-     **************************************************************************/
-
-/* REMOVE THIS COMMEND AND IMPLEMENT
-    @GET
-    @Path("/info")
-    @Produces("text/plain")
-    public String info() {
-        return "DRP is running";
-    }
-REMOVE THIS COMMEND AND IMPLEMENT */
-
-/* REMOVE THIS COMMEND AND IMPLEMENT
-    @GET
-    @Path("/")
-    @Produces("application/xml")
-    public List<Compute> rootMethod() {
-        return super.getDomains();
-    }
-REMOVE THIS COMMEND AND IMPLEMENT */
 
     /***************************COMPUTE methods.*******************************/
 
-/* REMOVE THIS COMMEND AND IMPLEMENT
-    @GET
-    @Path("/compute/all")
-    @Produces("application/xml")
-    public List<Compute> getAllEnvironments() {
-
-            return super.getDomains();
-    }
-REMOVE THIS COMMEND AND IMPLEMENT */
 
     
     /***********************NODE MANAGEMENT methods.***************************/
