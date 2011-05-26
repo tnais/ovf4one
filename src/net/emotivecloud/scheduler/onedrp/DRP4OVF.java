@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -22,10 +23,10 @@ import net.emotivecloud.commons.ListStrings;
 import net.emotivecloud.utils.oca.OCAComplexComputeWrapper;
 import net.emotivecloud.utils.oca.OCAComputeListWrapper;
 import net.emotivecloud.utils.oca.OCAComputeListWrapperFactory;
-import net.emotivecloud.utils.oca.OCADiskWrapper;
-import net.emotivecloud.utils.oca.OCANicWrapper;
 import net.emotivecloud.utils.oca.OCAComputeWrapper;
 import net.emotivecloud.utils.oca.OCAComputeWrapperFactory;
+import net.emotivecloud.utils.oca.OCADiskWrapper;
+import net.emotivecloud.utils.oca.OCANicWrapper;
 import net.emotivecloud.utils.ovf.OVFDisk;
 import net.emotivecloud.utils.ovf.OVFException;
 import net.emotivecloud.utils.ovf.OVFNetwork;
@@ -189,14 +190,14 @@ public class DRP4OVF{
     @GET
     @Path("/")
     @Produces("application/xml")
-    public OCAComputeListWrapper rootMethod() {
+    public String rootMethod() {
         return getAllEnvironments();
     }
 
     @GET
     @Path("/compute/all")
     @Produces("application/xml")
-    public OCAComputeListWrapper getAllEnvironments() {
+    public String getAllEnvironments() {
 
         Client ocaClient = null;
         try {
@@ -204,22 +205,18 @@ public class DRP4OVF{
         }
         catch (Exception nevermind) {}
 
-        OneResponse rc = VirtualMachinePool.info(ocaClient, 1);
+        OneResponse rc = VirtualMachinePool.info(ocaClient, 0);
         
         if(rc.isError()) {
         	log.error("Failed to retrieve VMs for user : " + rc.getErrorMessage());
         }
 
         
-        String tmp = rc.getMessage();
-        StringBuilder xmlReply = new StringBuilder(64+tmp.length());
-        xmlReply.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        xmlReply.append(tmp);
-
-        return parseOcaComputeList(xmlReply.toString());
+        return rc.getMessage();
+		
     }
 
-	
+
     /***************************************************************************
      *         Methods with a correspondence in the OCCI interface.            *
      **************************************************************************/
@@ -323,29 +320,29 @@ public class DRP4OVF{
 		OCAComputeWrapper oca = parseOcaCompute(xmlReply.toString());
                 
 		Collection<OCADiskWrapper> diskList = oca.getTemplate().getDisks().values();
-		
+
 		OVFDisk diskArray[] = new OVFDisk[diskList.size()];
-		
+
 		int counter = 0;
-		
+
 		for(OCADiskWrapper disk: diskList) {
 			diskArray[counter++] = new OVFDisk(disk.getDiskId(), 
 					disk.getSource(), 
 					disk.getSize());
 		}
-		
+
 		Collection<OCANicWrapper> nicList = oca.getTemplate().getNics().values();
-		
+
 		OVFNetwork nicArray[] = new OVFNetwork[nicList.size()];
-		
+
 		counter = 0;
-		
+
 		for(OCANicWrapper nic: nicList) {
 			nicArray[counter++] = new OVFNetwork(nic.getNetwork(), 
 					nic.getIp(), 
 					nic.getMac());
 		}
-		
+
         String rv = OVFWrapperFactory.create(""+oca.getId(),
 					oca.getCpu(),
 					oca.getMemory(),
@@ -390,7 +387,39 @@ public class DRP4OVF{
         return ret;
     }
 
+    @DELETE
+	@Path("/compute/{envid}")
+	public void deleteCompute(@PathParam("envid") String envid) throws DRPOneException {
+        
+	                    
+		Client ocaClient = null;
+		try {
+			ocaClient = new Client();
+		}
+		catch (Exception nevermind) {}
+
+		int machineId = 0;
     
+		try {
+			machineId = Integer.parseInt(envid);
+		}
+		catch(NumberFormatException nfe) {
+			throw new DRPOneException("Illegal VM ID "+envid,StatusCodes.BAD_OVF );
+		}
+    
+		VirtualMachine vm = new VirtualMachine(machineId,ocaClient);
+		
+		OneResponse rc = vm.finalizeVM();
+    
+		if(rc.isError()) {
+			log.error("Failed to delete vm instance " + envid +": " + rc.getErrorMessage());
+		}
+
+		log.info("Environment "+envid+" was destroyed.");
+	}
+
+
+
 	/* ==============================================================
 	 * ==============================================================
 	 *
