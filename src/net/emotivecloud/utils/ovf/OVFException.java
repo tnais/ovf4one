@@ -11,7 +11,12 @@ package net.emotivecloud.utils.ovf;
  */
 public class OVFException extends Exception {
 
-    public OVFException(Throwable cause) {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 3944938626743591093L;
+
+	public OVFException(Throwable cause) {
         super(cause);
     }
 

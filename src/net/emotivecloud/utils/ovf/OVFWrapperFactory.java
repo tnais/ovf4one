@@ -6,8 +6,6 @@
 package net.emotivecloud.utils.ovf;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -21,7 +19,6 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 
@@ -51,7 +48,6 @@ import org.dmtf.schemas.wbem.wscim._1.common.CimBoolean;
  *    <li>RASDType (Item element): Parent subelement not supported</li>
  *    <li>ProductSection properties: assuming that all the properties are type="string"</li>
  *    <li>Only one ProductSection is allowed in each VirtualSystem. Many ProductSections in the Envelope</li>
- *    <li>TODO: add more</li>
  * </ul>
  * <a href="http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Virtualization_for_Servers/2.2/html/Administration_Guide/Content.html">
  * Very useful reference</a>
@@ -100,7 +96,8 @@ public class OVFWrapperFactory {
      * @param productProperties A map with the product (generally the application) properties
      * @return
      */
-    public static OVFWrapper create(
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public static OVFWrapper create(
                     String id,
                     int CPUs,
                     int memoryMB,
@@ -160,7 +157,7 @@ public class OVFWrapperFactory {
 
         CimBoolean cimTrue = new CimBoolean();
         cimTrue.setValue(true);
-        List<Object> cop = vmConfig.getCategoryOrProperty();
+
         for(OVFNetwork n : networks) {
             if(n.getIp() != null) {
                 ProductSectionType.Property p = new ProductSectionType.Property();
@@ -270,7 +267,7 @@ public class OVFWrapperFactory {
      * @return
      * @throws OVFException
      */
-    public static OVFWrapper create(EnvelopeType envelope) throws OVFException {
+	public static OVFWrapper create(EnvelopeType envelope) throws OVFException {
         OVFWrapper ovf = new OVFWrapper();
         ovf.envelope = envelope;
         // build basic attributes: id
@@ -283,7 +280,7 @@ public class OVFWrapperFactory {
 
         ProductSectionType nets = getEmotiveProductSection(envelope, false);
         if(nets != null) {
-            List cops = nets.getCategoryOrProperty();
+            List<?> cops = nets.getCategoryOrProperty();
             for(Object o : cops) {
                 if(o instanceof ProductSectionType.Property) {
                     ProductSectionType.Property p = (ProductSectionType.Property) o;
@@ -493,7 +490,8 @@ public class OVFWrapperFactory {
 	return envelopes;
     }      
     
-    private static EnvelopeType unmarshallEnvelope(InputStream src) throws JAXBException {
+    @SuppressWarnings("rawtypes")
+	private static EnvelopeType unmarshallEnvelope(InputStream src) throws JAXBException {
         return (EnvelopeType) ((JAXBElement) u.unmarshal(src)).getValue();
     }
 }

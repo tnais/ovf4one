@@ -11,7 +11,12 @@ package net.emotivecloud.utils.ovf;
  */
 public class TCloudException extends Exception {
 
-    public TCloudException(Throwable cause) {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -7779179619282268006L;
+
+	public TCloudException(Throwable cause) {
         super(cause);
     }
 

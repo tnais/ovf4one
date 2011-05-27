@@ -8,10 +8,10 @@ package net.emotivecloud.utils.ovf;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.xml.bind.JAXBElement;
+
 import org.dmtf.schemas.ovf.envelope._1.MsgType;
-import org.dmtf.schemas.ovf.envelope._1.ObjectFactory;
-import org.dmtf.schemas.ovf.envelope._1.RASDType;
 import org.dmtf.schemas.ovf.envelope._1.SectionType;
 import org.dmtf.schemas.wbem.wscim._1.common.CimString;
 import org.dmtf.schemas.wbem.wscim._1.common.CimUnsignedLong;
