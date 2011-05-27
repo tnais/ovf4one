@@ -180,24 +180,46 @@ public class DRP4OVF{
      *         Methods without a correspondence in the OCCI interface.         *
      **************************************************************************/
 
+    /**
+	 * <code>info</code> a methods that simply tells that DRP4OVF is
+	 * up and ready
+	 *
+	 * @return a <code>String</code> The message stating that DRP4OVF
+	 * is ready
+	 */
     @GET
     @Path("/info")
     @Produces("text/plain")
-    public String info() {
+	public String info() {
         return "DRP4OVF is running";
     }
 
+    /**
+	 * <code>rootMethod</code> Implementatiomn for the default root
+	 * method. Returns an OCA format XML for all the user VMsm, the
+	 * same of getAllEnvironments()
+	 *
+	 * @return a <code>String</code> the OCA format XML for all the user
+	 * VMs
+	 */
     @GET
     @Path("/")
     @Produces("application/xml")
-    public String rootMethod() {
+	public String rootMethod() {
         return getAllEnvironments();
     }
 
+    /**
+	 * <code>getAllEnvironments</code> Non OCCI standard method. Returns an
+	 * OCA format XML for all the user VMs
+	 *
+	 * @return a <code>String</code> the OCA format XML for all the user
+	 * VMs
+	 */
     @GET
     @Path("/compute/all")
     @Produces("application/xml")
-    public String getAllEnvironments() {
+	public String getAllEnvironments() {
 
         Client ocaClient = null;
         try {
@@ -213,7 +235,7 @@ public class DRP4OVF{
 
         
         return rc.getMessage();
-		
+
     }
 
 
@@ -352,10 +374,16 @@ public class DRP4OVF{
 		return rv;
     }
 
+    /**
+	 * <code>getComputes</code> Returns an XML with the ID of all the
+	 * user VMs
+	 *
+	 * @return a <code>ListStrings</code> the list of the VMs
+	 */
     @GET
     @Path("/compute")
     @Produces("application/xml")
-    public ListStrings getComputes() {
+	public ListStrings getComputes() {
         ListStrings ret = new ListStrings();
 
         Client ocaClient = null;
@@ -387,6 +415,12 @@ public class DRP4OVF{
         return ret;
     }
 
+	/**
+	 * <code>deleteCompute</code> Kills an instance of a VM
+	 *
+	 * @param envid a <code>String</code> the id of the VM to kill
+	 * @exception DRPOneException when something goes wrong.
+	 */
     @DELETE
 	@Path("/compute/{envid}")
 	public void deleteCompute(@PathParam("envid") String envid) throws DRPOneException {
@@ -408,7 +442,7 @@ public class DRP4OVF{
 		}
     
 		VirtualMachine vm = new VirtualMachine(machineId,ocaClient);
-		
+
 		OneResponse rc = vm.finalizeVM();
     
 		if(rc.isError()) {
